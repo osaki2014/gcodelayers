@@ -18,7 +18,7 @@ button.active{background:var(--accent);color:white;border-color:var(--accent)}
 button.primary{background:var(--accent);color:#fff;border-color:var(--accent)}
 button.danger{color:#a33}
 select,input{border:1px solid var(--line);border-radius:7px;background:#fff;padding:6px 7px}
-#app{height:100%;display:grid;grid-template-rows:auto auto auto 1fr auto}
+#app{height:100%;display:grid;grid-template-rows:auto auto auto auto 1fr auto}
 header{height:54px;display:flex;align-items:center;gap:14px;padding:0 14px;border-bottom:1px solid var(--line);background:#fff}
 .brand{font-size:18px;font-weight:700;letter-spacing:.1px;white-space:nowrap}
 .brand small{font-size:11px;color:var(--muted);font-weight:500;margin-left:8px}
@@ -137,7 +137,8 @@ header{height:54px;display:flex;align-items:center;gap:14px;padding:0 14px;borde
 .layerNote,.layerFields small{font-size:10px;line-height:1.6;color:#6e7972;margin:7px 0 10px}.phaseInputs{display:flex;align-items:center;gap:8px}.phaseInputs input[type=number]{width:66px}.phaseInputs input[type=range]{padding:0;accent-color:#2f7d5d}
 #wavePreview{width:100%;height:76px;background:#f3f7f4;border:1px solid #e0e8e2;border-radius:7px;margin-top:8px}
 .layerApply{position:sticky;bottom:-14px;display:flex;gap:5px;flex-wrap:wrap;background:rgba(255,255,255,.97);border-top:1px solid var(--line);padding:10px 0;margin-top:8px}.layerApply button{font-size:11px}.layerApply .primary{flex:1}
-#layerMessage{font-size:11px;line-height:1.6;color:#326b4e;padding:8px;background:#eef6f0;border-radius:7px;margin:8px 0}#layerMessage.error{color:#a33227;background:#fff0ed}#layerMessage.pending{color:#895410;background:#fff5df}
+#layerMessage,#layerApplyMessage{font-size:11px;line-height:1.6;color:#326b4e;padding:8px;background:#eef6f0;border-radius:7px;margin:8px 0}#layerMessage.error,#layerApplyMessage.error{color:#a33227;background:#fff0ed}#layerMessage.pending,#layerApplyMessage.pending{color:#895410;background:#fff5df}
+#layerApplyMessage{flex-basis:100%;max-height:100px;overflow:auto;margin:0}#layerApplyMessage:empty{display:none}
 #layerPanel [hidden]{display:none!important}button:disabled,input:disabled{opacity:.45;cursor:default}
 #layerOverlay{position:absolute;left:12px;top:12px;background:rgba(255,255,255,.95);border:1px solid #c6dbce;border-radius:7px;color:#235f43;padding:7px 10px;font-size:11px;pointer-events:none;max-width:85%}
 .status{overflow-x:auto;white-space:nowrap}.status>*{flex-shrink:0}header{overflow-x:auto}header button{white-space:nowrap}
@@ -146,6 +147,7 @@ header{height:54px;display:flex;align-items:center;gap:14px;padding:0 14px;borde
 @media(max-width:650px){html,body{overflow:auto;height:auto;min-height:100%}#app{min-height:100vh;height:auto;grid-template-rows:auto auto auto auto auto}#workspace{grid-template-columns:1fr;grid-template-rows:400px 380px auto}#layerPanel{grid-column:1;grid-row:3;max-height:none}.pane{grid-column:1}.pane:nth-of-type(1){grid-row:1}.pane:nth-of-type(2){grid-row:2}.layerApply{bottom:0}header{height:50px}.brand{font-size:15px}.header-actions{gap:4px}header button{font-size:11px;padding:6px}.status{position:sticky;bottom:0}#layerList{grid-template-columns:repeat(8,1fr)}}
 @media(max-width:650px){#jumpLayers{display:block}.layerHeading{scroll-margin-top:10px}}
  #reviewDialog{max-width:620px;width:calc(100% - 48px);border:1px solid #b9cdc0;border-radius:16px;padding:24px;color:#243a30;box-shadow:0 20px 80px #0004}#reviewDialog::backdrop{background:#14291d77}#reviewDialog h2{font-size:20px}#reviewDetail{line-height:1.7}#reviewDialog .layerActions{justify-content:flex-end}
+#speedPanel{border-bottom:1px solid #d3dfd7;background:#f4f9f5;padding:8px 14px;font-size:12px} .speedControls{display:flex;align-items:center;gap:14px;flex-wrap:wrap}.speedControls label{display:flex;align-items:center;gap:7px}.speedControls input{width:90px}.speedControls select{max-width:230px}#speedSummary{margin:6px 0;color:#245c42;font-weight:600}#speedAdvanced[open]{flex-basis:100%}#speedAdvanced .layerFields{max-width:750px}#speedPanel .layerNote{margin:4px 0}#speedAdvanced .layerFields label{display:block}
 
 </style>
 </head>
@@ -176,12 +178,12 @@ header{height:54px;display:flex;align-items:center;gap:14px;padding:0 14px;borde
     <option value="tpu95">Bambu TPU 95A</option>
   </select></div>
   <div class="field"><label>ノズル</label><select id="nozzle">
-    <option>0.2</option><option>0.4</option><option>0.6</option><option selected>0.8</option>
+    <option>0.2</option><option selected>0.4</option><option>0.6</option><option>0.8</option>
   </select><span>mm</span></div>
   <div class="separator"></div>
   <div class="field"><label>ノズル温度</label><input id="hotend" type="number" value="200"><span>℃</span></div>
   <div class="field"><label>ベッド</label><input id="bedtemp" type="number" value="60"><span>℃</span></div>
-  <div class="field"><label>造形速度</label><button class="helpDot" data-help="printSpeed" title="造形速度とは？">?</button><input id="printSpeed" type="number" value="1.67" step=".1"><span>mm/s</span></div>
+  <div class="field"><label>造形速度</label><button class="helpDot" data-help="printSpeed" title="造形速度とは？">?</button><input id="printSpeed" type="number" value="30" step=".1"><span>mm/s</span></div>
   <div class="field"><label>移動速度</label><button class="helpDot" data-help="travelSpeed" title="移動速度とは？">?</button><input id="travelSpeed" type="number" value="83.3" step=".1"><span>mm/s</span></div>
   <div class="field"><label>線幅</label><button class="helpDot" data-help="lineWidth" title="線幅とは？">?</button><input id="lineWidth" type="number" value="0.8" step=".05"><span>mm</span></div>
   <div class="field"><label>高さ</label><button class="helpDot" data-help="layerHeight" title="高さとは？">?</button><input id="layerHeight" type="number" value="0.4" step=".05"><span>mm</span></div>
@@ -197,10 +199,10 @@ header{height:54px;display:flex;align-items:center;gap:14px;padding:0 14px;borde
   <span class="metric"><small>推奨線幅</small><b id="recWidth">—</b></span>
   <span class="metric"><small>推奨高さ</small><b id="recHeight">—</b></span>
   <span class="metric"><small>断面積 A</small><b id="recArea">—</b></span>
-  <span class="metric"><small>理論上限</small><b id="maxSpeedModel">—</b></span>
-  <span class="metric"><small>推奨造形速度</small><b id="recSpeedModel">—</b></span>
+  <span class="metric"><small>流量からの上限</small><b id="maxSpeedModel">—</b></span>
+  <span class="metric"><small id="speedCaption">推奨造形速度</small><b id="recSpeedModel">—</b></span>
   <span class="metric"><small>E / 100 mm</small><b id="recE100">—</b></span>
-  <span class="metric"><small>現在の流量</small><b id="currentQ">—</b></span>
+  <span class="metric"><small id="flowCaption">現在の流量</small><b id="currentQ">—</b></span>
   <span class="metric"><small>見かけ粘度 η</small><b id="currentEta">—</b></span>
   <span class="metric"><small>粘性補正Q上限</small><b id="rheoQmax">—</b></span>
   <button id="tempSafetyBadge" class="badge ok" data-help="temperatureSafety" style="border:0;cursor:pointer">温度G-code OK</button>
@@ -208,6 +210,26 @@ header{height:54px;display:flex;align-items:center;gap:14px;padding:0 14px;borde
   <button id="rheoBtn">粘性パラメータ</button>
   <button id="modelHelpBtn" class="primary">考え方・数式・文献</button>
 </div>
+
+<section id="speedPanel" aria-label="糸径と区間別速度設計">
+ <div class="speedControls">
+  <label>設計方式<select id="speedMode"><option value="thread" selected>糸径から区間別に設計</option><option value="legacy">線幅・高さを手動設定</option></select></label>
+  <label>目標の糸径<input id="threadDiameter" type="number" value="0.34" min="0.05" max="2" step="0.01"> mm</label>
+  <span class="layerNote">造形速度の入力は目標上限です。糸径と目標速度を保持してE・区間Fを計算します。</span>
+  <details id="speedAdvanced"><summary>区間速度・流量の条件</summary>
+   <div class="layerFields">
+    <label>第1層の速度上限 (mm/s)<input id="firstSpeed" type="number" min="0.1" max="100" step="1" value="10"></label>
+    <label>接着・転向部の上限 (mm/s)<input id="contactSpeed" type="number" min="0.1" max="100" step="1" value="5"></label>
+    <label>低速にする距離 (mm)<input id="contactZone" type="number" min="0.05" max="10" step="0.1" value="0.4"></label>
+    <label>造形加速度 (mm/s²)<input id="pathAccel" type="number" min="10" max="20000" step="100" value="1000"></label>
+    <label class="wide">MVSの扱い<select id="flowSource"><option value="profile">材料プロファイルの上限</option><option value="measured">実測した上限（上部MVS入力）</option></select></label>
+   </div>
+   <p class="layerNote">実測MVSは使用する温度・ノズルで測定した値を入力してください。圧力補正は機体側の設定を使用し、Eへの二重補正は行いません。停止時間は各層の設定を保持します。</p>
+  </details>
+ </div>
+ <p id="speedSummary" role="status"></p>
+ <p class="layerNote">空中の糸は円形断面で計算。線幅・高さは同じ断面積になる平面線へ換算します。第1層の高さ・輪郭の変更は再検査で個別に確認します。接着と冷却の成立は試験造形で確認してください。</p>
+</section>
 
 <div id="workspace">
 <aside id="layerPanel" aria-label="層ごとの編集">
@@ -241,7 +263,7 @@ header{height:54px;display:flex;align-items:center;gap:14px;padding:0 14px;borde
         <div id="svgControls" hidden>
           <div class="layerFields"><label class="wide">使用する輪郭<select id="svgContour"></select></label><label>読み込み幅 (mm)<input id="svgWidth" type="number" min=".1" max="1000" step="1" value="60"></label></div>
           <svg id="svgPreview" viewBox="0 0 264 120" aria-label="読み込むSVG輪郭のプレビュー" style="width:100%;height:120px"></svg>
-          <button type="button" id="useSvg">この輪郭を層の入力欄へ</button>
+          <button type="button" id="useSvg">SVG輪郭をモデル・G-codeに反映</button>
         </div>
         <p id="svgStatus" class="layerNote" role="status">閉じたpath・polygon・rect・circle・ellipseに対応。縦横比を保ち、現在の中心XYに配置します。複数の図形は選択できます。穴を含む複合pathは、SVG側で別々のpathに分けてください。</p>
       </details>
@@ -262,7 +284,7 @@ header{height:54px;display:flex;align-items:center;gap:14px;padding:0 14px;borde
       <svg id="wavePreview" viewBox="0 0 264 76" role="img" aria-label="輪郭に沿った線種の展開図"></svg>
       <p id="waveInfo" class="layerNote"></p>
     </details>
-    <div class="layerApply"><button type="submit" id="applyLayer" class="primary">変更をモデル・G-codeに反映</button><button type="button" id="discardLayer">入力を戻す</button></div>
+    <div class="layerApply"><div id="layerApplyMessage" role="status" aria-live="polite"></div><button type="submit" id="applyLayer" class="primary">変更をモデル・G-codeに反映</button><button type="button" id="discardLayer">入力を戻す</button></div>
     <p class="layerNote">入力後に「反映」を押してください。層を切り替えると入力中の変更も反映します。G-code出力には層の設定も保存され、再度開くと編集を続けられます。</p>
   </form>
   <details id="layerMore"><summary>初期モデル・全体の操作</summary><div class="layerActions"><button id="resetLayers">8層の初期モデル</button><button id="originalSample">元のG-codeを表示</button><button id="clearModel" class="danger">モデル全体を消去</button></div><p class="layerNote">消去・モデルの切替は「元に戻す」で取り消せます。元のG-codeには層設定がなく、直接編集で開きます。</p></details>
@@ -739,13 +761,13 @@ function replaceParam(raw,key,value,digits=5){
  let c=code;
  if(rx.test(c))c=c.replace(rx,(m,p)=>p+token);
  else c=c.trimEnd()+" "+token;
- return c+(comment?" "+comment:"");
+ return c.trimEnd()+(comment?" "+comment:"");
 }
 function syncProcessMetadata(input,model){
  let ls=input.split(/\r?\n/);
  // Keep exactly one machine-readable source model marker.
  ls=ls.filter(l=>!/^;\s*GCODEEDITOR_MODEL\b/i.test(l));
- const marker=`; GCODEEDITOR_MODEL nozzle=${fmt(model.nozzle,3)} width=${fmt(model.width,3)} height=${fmt(model.height,3)} flow=${fmt(model.flow,4)} material=${model.material}`;
+ const marker=`; GCODEEDITOR_MODEL nozzle=${fmt(model.nozzle,3)} width=${fmt(model.width,5)} height=${fmt(model.height,5)} flow=${fmt(model.flow,4)} material=${model.material}`;
  // Put the marker near the front but after an existing header start if present.
  let at=0;
  const hs=ls.findIndex(l=>l.trim()==="; HEADER_BLOCK_END");
@@ -772,8 +794,8 @@ function syncProcessMetadata(input,model){
  };
  for(let i=0;i<ls.length;i++){
    let raw=ls[i];
-   if(/^;\s*LINE_WIDTH:/i.test(raw))raw=`; LINE_WIDTH: ${fmt(model.width,3)}`;
-   if(/^;\s*LAYER_HEIGHT:/i.test(raw))raw=`; LAYER_HEIGHT: ${fmt(model.height,3)}`;
+   if(/^;\s*LINE_WIDTH:/i.test(raw))raw=`; LINE_WIDTH: ${fmt(model.width,5)}`;
+   if(/^;\s*LAYER_HEIGHT:/i.test(raw))raw=`; LAYER_HEIGHT: ${fmt(model.height,5)}`;
    for(const [k,val] of Object.entries(vals)){
      const rx=new RegExp(`^;\\s*${k}\\s*=.*$`,"i");
      if(rx.test(raw))raw=`; ${k} = ${val}`;
@@ -824,7 +846,7 @@ function rewriteExtrusionForProcess(input,src,tgt){
 function designResult(useRecommendedGeometry=true){
  const mat=MATERIALS[$("material").value],mach=MACHINES[$("machine").value],d=+$("nozzle").value;
  const geo=recommendedGeometry(d),w=useRecommendedGeometry?geo.width:+$("lineWidth").value,h=useRecommendedGeometry?geo.height:+$("layerHeight").value;
- const A=beadArea(w,h),mvs=+$("mvs").value||mat.mvs,safety=clamp((+$("safety").value||75)/100,.2,1);
+ const A=speedEnabled()?threadArea():beadArea(w,h),mvs=+$("mvs").value||mat.mvs,safety=clamp((+$("safety").value||75)/100,.2,1);
  const flow=+$("flow").value||mat.flow,currentV=+$("printSpeed").value||0,currentQ=A*currentV*flow;
  const rheo=currentRheo(),temp=+$("hotend").value||mat.nozzle;
  const rf=rheologyFlowLimit(mvs,d,temp,mat,rheo);
@@ -859,6 +881,7 @@ function updateDesignModel(){
    `現在Q=${fmt(r.currentQ,3)} mm³/s、壁せん断速度 γ̇w=${fmt(r.gamma,0)} s⁻¹、見かけ粘度 η=${Number.isFinite(r.eta)?fmt(r.eta,2):"—"} Pa·s、圧力比 ΔP/ΔPref=${fmt(r.pRatio,3)}<br>`+
    `100 mmの線に必要なE ≈ <b>${fmt(r.e100,3)} mm</b>（Flow=${fmt(r.flow,3)}）<br>`+
    `非造形移動のアプリ初期値: <b>${fmt(r.travel,0)} mm/s</b>`;
+ updateSpeedDesign();
 }
 function syncMaterialModelDefaults(){
  const mat=MATERIALS[$("material").value];
@@ -1544,7 +1567,7 @@ document.addEventListener("keydown",e=>{
 function saveHistory(){
  const h=state.history;if(h[h.length-1]!==ta.value)h.push(ta.value);if(h.length>60)h.shift();
 }
-function undo(){if(state.history.length<2)return;state.history.pop();ta.value=state.history[state.history.length-1];state.gcodeModel=parseProcessMarker(ta.value)||uiProcessModel();state.selected=-1;state.selectedLine=-1;state.drawAnchor=null;layerEditor.key=null;reparse(false);updateTemperatureBadge()}
+function undo(){if(state.history.length<2)return;state.history.pop();ta.value=state.history[state.history.length-1];restoreSpeedSettings(ta.value);updateDesignModel();state.gcodeModel=parseProcessMarker(ta.value)||uiProcessModel();state.selected=-1;state.selectedLine=-1;state.drawAnchor=null;layerEditor.key=null;reparse(false);updateTemperatureBadge()}
 function appendLine(line){saveHistory();ta.value=ta.value.replace(/\s*$/,"")+"\n"+line+"\n";reparse(false);saveHistory();ta.scrollTop=ta.scrollHeight}
 function addDrawPoint(p){
  const m=MACHINES[$("machine").value];
@@ -1652,7 +1675,7 @@ function setSValue(raw,value){
  let c=code;
  if(/(?:^|\s)S-?\d+(?:\.\d+)?/i.test(c))c=c.replace(/(^|\s)S-?\d+(?:\.\d+)?/i,`$1S${Math.round(value)}`);
  else c=c.trimEnd()+` S${Math.round(value)}`;
- return c+(comment?" "+comment:"");
+ return c.trimEnd()+(comment?" "+comment:"");
 }
 function temperatureSafetyPass(input,{fix=true}={}){
  let ls=input.split(/\r?\n/);
@@ -2244,7 +2267,7 @@ const LayerEngine = (() => {
       for(const q of p.points.concat(p.fills.flat()))if(q.x<0||q.y<0||q.z<0||q.x>process.bedSize[0]||q.y>process.bedSize[1]||q.z>process.bedSize[2])throw Error(`第${i+1}層が機体の造形範囲外です。輪郭・高さ・波の大きさを調整してください。`);
       return p;
     });
-    const area=process.width>=process.beadHeight?process.beadHeight*(process.width-process.beadHeight)+Math.PI*process.beadHeight**2/4:Math.PI*process.width*process.beadHeight/4;
+    const area=process.threadDiameter?Math.PI*process.threadDiameter**2/4:process.width>=process.beadHeight?process.beadHeight*(process.width-process.beadHeight)+Math.PI*process.beadHeight**2/4:Math.PI*process.width*process.beadHeight/4;
     const ePerMM=area/(Math.PI*1.75**2/4)*process.flow;
     const out=['; Gcode Layer Editor 層別モデル','G90','M82','T0',`M140 S${number(process.bed)}`,`M104 S${number(process.hotend)}`,`M190 S${number(process.bed)}`,`M109 S${number(process.hotend)}`,
       process.machine==='a1mini'?'G28 T300':'G28',`M109 S${number(process.hotend)}`,'G92 E0','; MACHINE_START_GCODE_END'];
@@ -2277,10 +2300,15 @@ if(typeof module!=='undefined')module.exports=LayerEngine;
 /* Layer editor integration. Runs in the original editor's script scope. */
 const layerEditor={layers:[],selected:0,key:null,dirty:false,detached:false,drawing:null};
 const layerKeys=Object.keys(LayerEngine.defaults());
-function layerProcess(){return {machine:$("machine").value,bedSize:MACHINES[$("machine").value].bed,
+function layerProcess(){return {threadDiameter:speedEnabled()?+$('threadDiameter').value:null,machine:$("machine").value,bedSize:MACHINES[$("machine").value].bed,
   speed:+$("printSpeed").value,travel:+$("travelSpeed").value,width:+$("lineWidth").value,beadHeight:+$("layerHeight").value,
   flow:+$("flow").value,hotend:+$("hotend").value,bed:+$("bedtemp").value};}
-function layerMessage(text,type=''){const box=$("layerMessage");box.textContent=text;box.className=type;}
+function layerMessage(text,type=''){
+  for(const id of ['layerMessage','layerApplyMessage']){const box=$(id);box.textContent=text;box.className=type;}
+}
+function endContourDrawing(){
+  layerEditor.drawing=null;$("finishContour").hidden=true;$("cancelContour").hidden=true;
+}
 function layerDraft(){
   const current=layerEditor.layers[layerEditor.selected];if(!current)return null;
   const l={...current};
@@ -2351,8 +2379,9 @@ function syncLayersFromText(){
   else if(!layerEditor.dirty)layerMessage(layerEditor.layers.length?'層を選び、値を変更して反映してください。':'モデルは空です。「＋ 最上部に層を追加」で開始できます。');
 }
 function replaceLayerModel(layers,selected=layerEditor.selected){
+  if(speedEnabled()&&speedInputErrors().length)throw Error(speedInputErrors().join('\n'));
   const result=LayerEngine.generate(layers,layerProcess());
-  let text=syncProcessMetadata(result.text,uiProcessModel());
+  let text=prepareLayerGcode(syncProcessMetadata(result.text,uiProcessModel()));
   const meta=LayerEngine.decode(text);meta.hash=LayerEngine.hash(LayerEngine.body(text));
   text=text.replace(/^; @GCE_LAYERS .+$/m,'; @GCE_LAYERS '+JSON.stringify(meta));
   saveHistory();ta.value=text;state.gcodeModel=uiProcessModel();state.selected=-1;state.selectedLine=-1;state.drawAnchor=null;
@@ -2418,7 +2447,7 @@ $("finishContour").onclick=()=>{
   $("lp-shape").value='custom';$("lp-rotation").value=0;$("lp-points").value=p.map(p=>`${fmt(p.x,3)}, ${fmt(p.y,3)}`).join('\n');
   layerEditor.dirty=true;layerVisibility();if(commitLayer()){$("finishContour").hidden=true;$("cancelContour").hidden=true;}
 };
-$("cancelContour").onclick=()=>{layerEditor.drawing=null;$("finishContour").hidden=true;$("cancelContour").hidden=true;layerMessage('輪郭の描画を中止しました。');draw();};
+$("cancelContour").onclick=()=>{endContourDrawing();layerMessage('輪郭の描画を中止しました。');draw();};
 canvas.addEventListener('pointerdown',e=>{
   if(!layerEditor.drawing||e.button!==0)return;
   e.preventDefault();e.stopImmediatePropagation();
@@ -2444,6 +2473,7 @@ for(const id of ['saveGBtn','save3mfBtn','applySettings','formatBtn']){
    Profile references verified 2026-09-12; recommendation != export requirement. */
 function targetProcessModel(){return uiProcessModel();}
 function processInputErrors(){
+  if(speedEnabled())return speedInputErrors();
   const p=uiProcessModel(),errors=[];
   for(const [k,label] of [['nozzle','ノズル径'],['width','線幅'],['height','線の高さ'],['flow','Flow']])
     if(!Number.isFinite(p[k])||p[k]<=0)errors.push(`${label}は0より大きい有限の数値にしてください。`);
@@ -2454,7 +2484,7 @@ function processInputErrors(){
   return errors;
 }
 function theoreticalExtrusion(input,model=uiProcessModel()){
-  const factor=beadArea(model.width,model.height)*model.flow/filamentArea(1.75);
+  const factor=(speedEnabled()?threadArea():beadArea(model.width,model.height))*model.flow/filamentArea(1.75);
   const segments=parseGcode(input).segs,byLine=new Map(segments.map(s=>[s.lineIndex,s]));
   let absolute=true,oldE=0,newE=0,count=0,mismatches=0,example='';
   const lines=input.split(/\r?\n/).map((raw,i)=>{
@@ -2485,6 +2515,7 @@ function refreshLayerHash(text,before){
   return text;
 }
 function processConsistencyPass(input,{fix=true}={}){
+  if(speedEnabled())return threadConsistency(input,{fix});
   const src=sourceProcessModel(input),tgt=uiProcessModel(),errors=processInputErrors(),changes=[],warnings=[];
   if(errors.length)return {text:input,src,tgt,errors,changes,warnings};
   const rw=theoreticalExtrusion(input,tgt);
@@ -2505,7 +2536,7 @@ function acceptProcessText(text){
 }
 function speedLimitForInput(){
   const p=uiProcessModel(),mat=MATERIALS[$('material').value];
-  return rheologyFlowLimit(+$('mvs').value||mat.mvs,p.nozzle,+$('hotend').value,mat,currentRheo()).qAllow*clamp((+$('safety').value||75)/100,.2,1)/(beadArea(p.width,p.height)*p.flow);
+  return rheologyFlowLimit(+$('mvs').value||mat.mvs,p.nozzle,+$('hotend').value,mat,currentRheo()).qAllow*clamp((+$('safety').value||75)/100,.2,1)/((speedEnabled()?threadArea():beadArea(p.width,p.height))*p.flow);
 }
 function capMotionSpeed(limit,extrude=true){
   const byLine=new Map(parseGcode(ta.value).segs.filter(s=>s.extrude===extrude).map(s=>[s.lineIndex,s]));
@@ -2647,6 +2678,10 @@ async function autoRepairGcode(choose=askRepairIssue){
 }
 function exportPreflight(){
   const errors=processInputErrors(),warnings=[];
+  if(speedEnabled()){
+    for(const id of ['lineWidth','layerHeight','flow','travelSpeed','mvs'])if(!Number.isFinite(+$(id).value)||+$(id).value<=0)errors.push(`${id}が数値として成立しません。一括反映または再検査で修正してください。`);
+    for(const id of ['hotend','bedtemp'])if(!Number.isFinite(+$(id).value)||$(id).value.trim()===''||+$(id).value<0)errors.push('温度を0以上の数値で設定してください。');
+  }
   if(!errors.length)warnings.push(...collectRepairIssues().map(x=>`${x.title}：${x.detail}`));
   if(/\b(?:NaN|Infinity)\b/.test(ta.value.split('\n').map(l=>l.split(';')[0]).join('\n')))errors.push('G-codeに数値でない座標・押出し値があります。');
   return {text:ta.value,notes:[],warnings,errors};
@@ -2727,40 +2762,288 @@ function svgLayerDraft(candidate,width,current){
   const l={...current,shape:'custom',rotation:0,width,depth:(ymax-ymin)*scale,points:points.map(p=>`${fmt(p.x,5)},${fmt(p.y,5)}`).join('\n')};
   LayerEngine.contour(l);return l;
 }
-function previewSvgContour(){
+function stageSvgContour(l){
+  // Selecting an SVG replaces the pending hand-drawn outline, not the saved model.
+  // Only cancel drawing after validation has succeeded.
+  endContourDrawing();state.drawAnchor=null;
+  for(const key of ['shape','rotation','width','depth','points'])$('lp-'+key).value=l[key];
+  layerEditor.dirty=true;layerVisibility();draw();
+  layerMessage(`SVG「${svgImportState.filename}」の輪郭を入力しました。「変更をモデル・G-codeに反映」で確定してください。`,'pending');
+}
+function previewSvgContour(stage=false){
   const candidate=svgImportState.candidates[+$('svgContour').value];if(!candidate)return;
   try{
     const l=svgLayerDraft(candidate,+$('svgWidth').value,layerDraft()),pts=LayerEngine.contour(l).pts;
     const scale=Math.min(240/l.width,100/l.depth);
     $('svgPreview').innerHTML=`<polygon points="${pts.map(p=>`${132+(p.x-l.cx)*scale},${60-(p.y-l.cy)*scale}`).join(' ')}" fill="#dcece2" stroke="#2f7d5d" stroke-width="1.5"/>`;
-    $('svgStatus').textContent=`${candidate.label}：${fmt(l.width,2)} × ${fmt(l.depth,2)} mm / ${pts.length}頂点。曲線は直線近似です。「入力欄へ」の後に層の反映ボタンを押してください。`;$('useSvg').disabled=false;
+    $('svgStatus').textContent=`${svgImportState.filename} / ${candidate.label}：${fmt(l.width,2)} × ${fmt(l.depth,2)} mm / ${pts.length}頂点。曲線は直線近似です。層の反映ボタンで確定できます。`;$('useSvg').disabled=false;
+    if(stage)stageSvgContour(l);
   }catch(err){$('svgStatus').textContent=err.message;$('useSvg').disabled=true;$('svgPreview').innerHTML='';}
 }
 $('svgFile').onchange=async e=>{
   const file=e.target.files[0];if(!file)return;
+  const targetLayer=layerEditor.layers[layerEditor.selected];
   try{
     if(file.size>2*1024*1024)throw Error('SVGは2 MB以下にしてください。');
-    const result=readSvgContours(await file.text());svgImportState.candidates=result.candidates;svgImportState.filename=file.name;
+    const result=readSvgContours(await file.text());
+    if(!targetLayer||targetLayer!==layerEditor.layers[layerEditor.selected])throw Error('読み込み中に編集対象の層が変わりました。対象の層でSVGを選び直してください。');
+    svgImportState.candidates=result.candidates;svgImportState.filename=file.name;
     $('svgContour').replaceChildren();result.candidates.forEach((c,i)=>{const o=document.createElement('option');o.value=i;o.textContent=c.label;$('svgContour').append(o);});
-    $('svgContour').value='0';$('svgWidth').value=layerDraft()?.width||60;$('svgControls').hidden=false;previewSvgContour();
+    $('svgContour').value='0';$('svgWidth').value=layerDraft()?.width||60;$('svgControls').hidden=false;previewSvgContour(true);
     if(result.skipped.length)$('svgStatus').textContent+=' 除外：'+result.skipped.slice(0,5).join(' / ');
   }catch(err){$('svgControls').hidden=true;$('svgStatus').textContent=err.message;svgImportState.candidates=[];}
   finally{e.target.value='';}
 };
-$('svgContour').onchange=previewSvgContour;$('svgWidth').oninput=previewSvgContour;
+$('svgContour').onchange=()=>previewSvgContour(true);$('svgWidth').oninput=()=>previewSvgContour(true);
 $('useSvg').onclick=()=>{
   try{
-    if(layerEditor.drawing)throw Error('図面での輪郭描画を確定または中止してください。');
     const l=svgLayerDraft(svgImportState.candidates[+$('svgContour').value],+$('svgWidth').value,layerDraft());
-    for(const key of ['shape','rotation','width','depth','points'])$('lp-'+key).value=l[key];
-    layerEditor.dirty=true;layerVisibility();layerMessage(`SVG「${svgImportState.filename}」の輪郭を入力しました。層の反映ボタンで確定してください。`,'pending');
+    stageSvgContour(l);commitLayer();
   }catch(err){layerMessage(err.message,'error');}
 };
 
+/* Bounded G0/G1 planner. F is a segment ceiling, firmware still plans acceleration. */
+const SpeedEngine=(()=>{
+  const length=s=>Math.hypot(s.b.x-s.a.x,s.b.y-s.a.y,s.b.z-s.a.z);
+  const circle=d=>Math.PI*d*d/4;
+  function geometry(d,nozzle){
+    const area=circle(d),height=Math.min(d,nozzle*.5),width=area/height+height*(1-Math.PI/4);
+    return {area,width,height};
+  }
+  function plan(segments,lines,p){
+    for(const k of ['requested','first','contact','zone','accel','zAccel','q','areaFlow','maxXY','maxZ','maxE'])if(!Number.isFinite(p[k])||p[k]<=0)throw Error('区間速度の計算条件が不正です：'+k);
+    const groups=[];let run=[],previous=null,firstLayer=segments.find(s=>s.extrude)?.layerId;
+    const flush=()=>{if(run.length)groups.push(run);run=[];};
+    for(const s of segments){
+      const L=length(s);
+      if(!s.extrude||L<1e-8){flush();previous=null;continue;}
+      if(previous&&(s.layerId!==previous.layerId||lines.slice(previous.lineIndex+1,s.lineIndex).some(l=>/^\s*(?:G4\b|M400\b|M10[49]\b|M190\b|G92\b)/i.test(l))))flush();
+      const dir={x:(s.b.x-s.a.x)/L,y:(s.b.y-s.a.y)/L,z:(s.b.z-s.a.z)/L};
+      const limits={requested:p.requested,flow:p.q/p.areaFlow,extruder:p.maxE*circle(1.75)/p.areaFlow};
+      for(const k of ['x','y','z'])if(Math.abs(dir[k])>1e-10)limits[k]=(k==='z'?p.maxZ:p.maxXY)/Math.abs(dir[k]);
+      // For untagged G-code only the initial height band is treated as layer one.
+      const first=firstLayer>=0?s.layerId===firstLayer:Math.max(s.a.z,s.b.z)<=p.firstZ+.02;
+      if(first)limits.first=p.first;
+      let accel=p.accel;if(Math.abs(dir.z)>1e-10)accel=Math.min(accel,p.zAccel/Math.abs(dir.z));
+      run.push({lineIndex:s.lineIndex,L,dir,limits,cap:Math.min(...Object.values(limits)),accel,first});previous=s;
+    }flush();
+    const blocks=[];
+    for(const g of groups){
+      const n=g.length,pos=[0];g.forEach(b=>pos.push(pos.at(-1)+b.L));
+      const corners=[0,n];
+      for(let i=1;i<n;i++){
+        const a=g[i-1].dir,b=g[i].dir,c=a.x*b.x+a.y*b.y+a.z*b.z;
+        // Smooth vertical waves also need a slow region at their low point,
+        // even when the change of direction is smaller than 25 degrees.
+        const valley=a.z < -1e-8 && b.z > 1e-8;
+        if(c<Math.cos(25*Math.PI/180)||valley)corners.push(i);
+      }
+      corners.sort((a,b)=>a-b);
+      let ci=0;
+      for(let i=0;i<n;i++){
+        while(ci+1<corners.length&&corners[ci+1]<=i)ci++;
+        const near=Math.min(pos[i]-pos[corners[ci]],pos[corners[Math.min(ci+1,corners.length-1)]]-pos[i+1]);
+        if(near<p.zone-1e-8){g[i].limits.contact=p.contact;g[i].cap=Math.min(g[i].cap,p.contact);g[i].contact=true;}
+      }
+      const junction=new Array(n+1).fill(0);
+      for(let i=1;i<n;i++){
+        const a=g[i-1],b=g[i];let v=Math.min(a.cap,b.cap);
+        for(const k of ['x','y','z']){const change=Math.abs(a.dir[k]-b.dir[k]);if(change>1e-10)v=Math.min(v,(k==='z'?p.jerkZ:p.jerkXY)/change);}
+        junction[i]=v;
+      }
+      for(let i=0;i<n;i++)junction[i+1]=Math.min(junction[i+1],Math.sqrt(junction[i]**2+2*g[i].accel*g[i].L));
+      for(let i=n-1;i>=0;i--)junction[i]=Math.min(junction[i],Math.sqrt(junction[i+1]**2+2*g[i].accel*g[i].L));
+      for(let i=0;i<n;i++){
+        const b=g[i],peak=Math.sqrt(b.accel*b.L+(junction[i]**2+junction[i+1]**2)/2);
+        b.speed=Math.max(.0001,Math.floor(Math.min(b.cap,peak)*6000)/6000);
+        b.entry=junction[i];b.exit=junction[i+1];
+        b.reason=peak<b.cap-1e-6?'acceleration':Object.keys(b.limits).reduce((a,k)=>b.limits[k]<b.limits[a]?k:a,'requested');
+        b.kind=b.first?'第1層':b.contact?'接着・転向部':'通常区間';blocks.push(b);
+      }
+    }
+    const counts={};for(const b of blocks)counts[b.reason]=(counts[b.reason]||0)+1;
+    return {blocks,counts,min:blocks.reduce((a,b)=>Math.min(a,b.speed),Infinity),max:blocks.reduce((a,b)=>Math.max(a,b.speed),0),q:blocks.reduce((a,b)=>Math.max(a,b.speed*p.areaFlow),0)};
+  }
+  return {circle,geometry,plan};
+})();
+if(typeof module!=='undefined')module.exports=SpeedEngine;
+
+/* Thread diameter is the primary design input; requested speed is never rewritten. */
+function speedEnabled(){return $('speedMode').value==='thread';}
+function speedInputErrors(){
+  const errors=[];
+  for(const [id,min,max,label] of [['threadDiameter',.05,2,'目標の糸径'],['printSpeed',.1,500,'目標造形速度'],['firstSpeed',.1,100,'第1層速度'],['contactSpeed',.1,100,'接着速度'],['contactZone',.05,10,'接着距離'],['pathAccel',10,20000,'造形加速度']]){
+    const v=+$(id).value;if(!Number.isFinite(v)||v<min||v>max)errors.push(`${label}は${min}〜${max}の数値にしてください。`);
+  }
+  if($('flowSource').value==='measured'&&!(+$('mvs').value>0))errors.push('実測MVSを0より大きい数値で入力してください。');
+  return errors;
+}
+function threadArea(){return SpeedEngine.circle(+$('threadDiameter').value);}
+function threadDerived(){
+  const mat=MATERIALS[$('material').value],mach=MACHINES[$('machine').value],g=SpeedEngine.geometry(+$('threadDiameter').value,+$('nozzle').value),safe=materialSafety();
+  const safety=Number.isFinite(+$('safety').value)&&+$('safety').value>=20&&+$('safety').value<=100?+$('safety').value:75;
+  const measured=$('flowSource').value==='measured',mvs=measured?+$('mvs').value:mat.mvs;
+  const need=g.area*mat.flow*+$('printSpeed').value/(safety/100);
+  // Raise only within the existing material range. Never invent additional MVS capacity.
+  let hotend=clamp(mat.nozzle,safe.hotMin,safe.hotMax);
+  if(!measured)while(hotend<safe.hotMax&&rheologyFlowLimit(mvs,+$('nozzle').value,hotend,mat,currentRheo()).qAllow<Math.min(need,mvs)-1e-8)hotend++;
+  else if(Number.isFinite(+$('hotend').value)&&+$('hotend').value>=safe.hotMin&&+$('hotend').value<=safe.hotMax)hotend=+$('hotend').value;
+  return {lineWidth:+g.width.toFixed(5),layerHeight:+g.height.toFixed(5),flow:mat.flow,hotend,bedtemp:mat.bed,mvs,safety,travelSpeed:mach.travelRec};
+}
+function applyThreadDerived(){const values=threadDerived();for(const [id,v] of Object.entries(values))$(id).value=v;return values;}
+function threadPlan(input){
+  const errors=speedInputErrors();if(errors.length)throw Error(errors.join('\n'));
+  if(/^\s*(?:G0?[23]\b|G20\b|G5[3-9]\b|G92\b[^;\n]*[XYZ])/mi.test(input))throw Error('区間設計はmm単位のG0/G1に対応します。円弧・座標系切替を含むG-codeは先に変換してください。');
+  const p=uiProcessModel(),mat=MATERIALS[$('material').value],cal=MACHINES[$('machine').value].estimate;
+  const q=$('flowSource').value==='measured'?+$('mvs').value:rheologyFlowLimit(+$('mvs').value,p.nozzle,+$('hotend').value,mat,currentRheo()).qAllow;
+  const segs=parseGcode(input).segs,first=segs.find(s=>s.extrude);
+  const params={requested:+$('printSpeed').value,first:+$('firstSpeed').value,contact:+$('contactSpeed').value,zone:+$('contactZone').value,
+    accel:Math.min(+$('pathAccel').value,cal.printAccel),zAccel:cal.zAccel,jerkXY:cal.jerkXY,jerkZ:cal.jerkZ,
+    q:q*(+$('safety').value/100),areaFlow:threadArea()*p.flow,maxXY:cal.maxXY,maxZ:cal.maxZ,maxE:cal.maxE,firstZ:first?Math.min(first.a.z,first.b.z):0};
+  const result=SpeedEngine.plan(segs,input.split(/\r?\n/),params);result.params=params;return result;
+}
+const speedSettingKeys=['speedMode','threadDiameter','printSpeed','firstSpeed','contactSpeed','contactZone','pathAccel','flowSource','machine','material','nozzle','lineWidth','layerHeight','flow','hotend','bedtemp','mvs','safety','travelSpeed'];
+function splitThreadMoves(input){
+  const byLine=new Map(parseGcode(input).segs.map(s=>[s.lineIndex,s]));let xyzAbsolute=true,eAbsolute=true,oldE=0,count=0;
+  const result=[];
+  for(const [i,raw] of input.split(/\r?\n/).entries()){
+    const c=raw.split(';')[0].trim();
+    if(c==='G90')xyzAbsolute=true;if(c==='G91')xyzAbsolute=false;if(c==='M82')eAbsolute=true;if(c==='M83')eAbsolute=false;
+    const em=c.match(/(?:^|\s)E(-?\d+(?:\.\d+)?)/i),s=byLine.get(i),L=s?Math.hypot(s.b.x-s.a.x,s.b.y-s.a.y,s.b.z-s.a.z):0;
+    if(s?.extrude&&L>.501&&em){
+      const n=Math.ceil(L/.5);count+=n;if(count>300000)throw Error('区間数が多すぎます。輪郭・層数を減らしてください。');
+      let prev={...s.a},prevE=oldE;
+      for(let j=1;j<=n;j++){
+        let line=raw;
+        for(const k of ['x','y','z']){const target=+(s.a[k]+(s.b[k]-s.a[k])*j/n).toFixed(4);line=replaceParam(line,k.toUpperCase(),xyzAbsolute?target:target-prev[k],4);prev[k]=target;}
+        const targetE=+(oldE+s.de*j/n).toFixed(5);line=replaceParam(line,'E',eAbsolute?targetE:targetE-prevE,5);prevE=targetE;
+        result.push(line);
+      }
+    }else{result.push(raw);count++;}
+    if(em&&/^G(?:92|0?[01])\b/i.test(c)){if(/^G92\b/i.test(c)||eAbsolute)oldE=+em[1];else oldE+=+em[1];}
+  }
+  return result.join('\n');
+}
+function speedMetadata(input){
+  const config={version:1,settings:Object.fromEntries(speedSettingKeys.map(k=>[k,$(k).value]))};
+  return input.split(/\r?\n/).filter(l=>!/^; @GCE_SPEED /.test(l)).join('\n').trimEnd()+'\n; @GCE_SPEED '+JSON.stringify(config)+'\n';
+}
+function threadGcode(input,{temperatures=false}={}){
+  const original=input;
+  let text=splitThreadMoves(input.split(/\r?\n/).filter(l=>!l.includes('; GCE_ACCEL')).map(normalizeKnownLine).join('\n'));
+  const rw=theoreticalExtrusion(text),plan=threadPlan(rw.text),byLine=new Map(plan.blocks.map(b=>[b.lineIndex,b]));
+  const segs=new Map(parseGcode(rw.text).segs.map(s=>[s.lineIndex,s])),cal=MACHINES[$('machine').value].estimate;
+  let lines=rw.text.split(/\r?\n/).map((raw,i)=>{
+    raw=raw.replace(/\s*\|?\s*GCE_SEG:[^;\n]*/g,'').replace(/;\s*$/,'').trimEnd();
+    const b=byLine.get(i),s=segs.get(i);
+    if(b){raw=replaceParam(raw,'F',b.speed*60,2).trimEnd();raw+=(raw.includes(';')?' | ':' ; ')+`GCE_SEG:${b.kind}`;}
+    else if(s&&!s.extrude){
+      const L=Math.hypot(s.b.x-s.a.x,s.b.y-s.a.y,s.b.z-s.a.z);let v=+$('travelSpeed').value;
+      for(const k of ['x','y','z'])if(Math.abs(s.b[k]-s.a[k])>1e-9)v=Math.min(v,(k==='z'?cal.maxZ:cal.maxXY)*L/Math.abs(s.b[k]-s.a[k]));
+      raw=replaceParam(raw,'F',Math.floor(v*6000)/100,2).trimEnd();
+    }
+    if(temperatures)for(const [cmd,value] of [['M104',+$('hotend').value],['M109',+$('hotend').value],['M140',+$('bedtemp').value],['M190',+$('bedtemp').value]])raw=replacePositiveTemperature(raw,cmd,value).line;
+    return raw;
+  });
+  const firstMove=lines.findIndex(l=>/^\s*G(?:0?[01])\b/i.test(l));
+  if(firstMove>=0)lines.splice(firstMove,0,`M204 S${plan.params.accel} ; GCE_ACCEL`);
+  text=syncProcessMetadata(lines.join('\n'),uiProcessModel());text=speedMetadata(text);
+  return {text:refreshLayerHash(text,original),plan,rw};
+}
+function threadConsistency(input,{fix=true}={}){
+  const errors=speedInputErrors(),src=sourceProcessModel(input),tgt=uiProcessModel(),warnings=[],changes=[];
+  if(errors.length)return {text:input,errors,src,tgt,warnings,changes};
+  try{
+    const result=threadGcode(input);
+    const mismatch=result.rw.mismatches||!input.includes('; @GCE_SPEED ')||result.text!==input;
+    if(mismatch&&!fix)warnings.push('糸径・区間速度の計算結果とG-codeに差があります。');
+    if(fix)changes.push(`目標糸径 ${$('threadDiameter').value} mm、目標上限 ${$('printSpeed').value} mm/s を保持し、${result.plan.blocks.length}区間のE・Fを計算しました。`);
+    return {text:fix?result.text:input,errors,src,tgt,warnings,changes,scaled:result.rw.count};
+  }catch(err){errors.push(err.message);return {text:input,errors,src,tgt,warnings,changes};}
+}
+function speedPlanSummary(plan){
+  if(!plan.blocks.length)return '造形する線がありません。';
+  const names={requested:'指定速度',flow:'流量',extruder:'押出機',x:'X軸',y:'Y軸',z:'Z軸',first:'第1層',contact:'接着・転向',acceleration:'加減速'};
+  return `目標 ${$('printSpeed').value} mm/s → 区間F ${fmt(plan.min,2)}〜${fmt(plan.max,2)} mm/s / 最大Q ${fmt(plan.q,3)} mm³/s。制約：`+Object.entries(plan.counts).map(([k,n])=>`${names[k]} ${n}区間`).join('、');
+}
+function updateSpeedDesign(){
+  const on=speedEnabled();$('threadDiameter').disabled=!on;$('speedAdvanced').hidden=!on;
+  $('flowCaption').textContent=on?'目標速度での流量':'現在の流量';$('speedCaption').textContent=on?'流量からの目安':'推奨造形速度';
+  $('applyDesignBtn').textContent=on?'糸径・速度から関連設定を入力':'推奨値を入力欄へ';
+  $('applySettings').textContent='一括反映＋自動検査';
+  if(!on){$('speedSummary').textContent='線幅・高さを使う従来方式です。';return;}
+  const errors=speedInputErrors();if(errors.length){$('speedSummary').textContent=errors.join(' ');return;}
+  const g=SpeedEngine.geometry(+$('threadDiameter').value,+$('nozzle').value);
+  $('recWidth').textContent=fmt(g.width,5)+' mm';$('recHeight').textContent=fmt(g.height,3)+' mm';
+  $('speedSummary').textContent=`糸径 ${$('threadDiameter').value} mm / 円形断面 ${fmt(g.area,5)} mm² / 平面換算 ${fmt(g.width,3)} × ${fmt(g.height,3)} mm。変更後は「一括反映＋自動検査」で区間速度を更新してください。`;
+  $('modelExampleBody').innerHTML=`<p>糸径 d=${escapeHtml($('threadDiameter').value)} mm：A=πd²/4=${fmt(g.area,5)} mm²。ΔE=3D移動距離×A×Flow÷フィラメント断面積。Q=A×区間速度×Flow。</p><p>区間Fは目標速度、流量、XYZ各軸、第1層、接着・転向部、加減速の上限の最小値から計算します。25°以上の転向、垂直の波の谷、造形の開始・終了を低速域とし、G4では完全停止を計算します。長い線は0.5 mm以下を目安に分割します。</p><p>温度は材料設定を基準に既存の粘性近似から提案します。実測MVSモードでは、その温度・ノズルで測ったMVSを上限にします。糸の冷却・接着の成否を保証する理論ではないため、第1層・接着速度は試験結果に合わせて設定してください。</p>`;
+}
+const previousCollectRepairIssues=collectRepairIssues;
+collectRepairIssues=function(){
+  if(!speedEnabled())return previousCollectRepairIssues();
+  const issues=previousCollectRepairIssues().filter(x=>!['width','height','extrusion','speed','travel'].includes(x.id));
+  if(speedInputErrors().length)return issues;
+  const derived=threadDerived();
+  const labels={lineWidth:'平面換算の線幅',layerHeight:'平面換算の高さ',flow:'Flow補正',hotend:'ノズル温度',bedtemp:'ベッド温度',mvs:'材料MVS',safety:'安全率',travelSpeed:'非造形移動速度'};
+  for(const [id,value] of Object.entries(derived))if(Math.abs(+$(id).value-value)>1e-5||!Number.isFinite(+$(id).value)){
+    issues.unshift({id:'thread-'+id,title:labels[id]+'の整合',detail:`現在 ${$(id).value} → 設計値 ${value}。糸径 ${$('threadDiameter').value} mm と目標速度 ${$('printSpeed').value} mm/s は変更しません。\n温度・Flowは材料設定、平面の幅・高さは糸と同じ断面積から計算します。MVSを必要流量に合わせて水増しすることはありません。`,fix:()=>{
+      $(id).value=value;
+      let text=ta.value;
+      if(['hotend','bedtemp'].includes(id))text=text.split('\n').map(raw=>{for(const cmd of id==='hotend'?['M104','M109']:['M140','M190'])raw=replacePositiveTemperature(raw,cmd,value).line;return raw;}).join('\n');
+      text=syncProcessMetadata(text,uiProcessModel());acceptProcessText(speedMetadata(text));
+    }});
+  }
+  const consistency=threadConsistency(ta.value,{fix:false});
+  if(consistency.warnings.length)issues.push({id:'thread-path',title:'糸径・区間別E/Fの再計算',detail:'円形断面×3D距離×FlowからEを再計算し、接着・転向部／第1層／各軸／流量／加減速の制約からFを設定します。糸径・目標速度・G4停止時間・XYZ形状は保持します。',fix:()=>acceptProcessText(threadGcode(ta.value).text)});
+  if(consistency.errors.length)issues.push({id:'thread-invalid',title:'区間設計を計算できません',detail:consistency.errors.join('\n'),fix:null});
+  return issues;
+};
+const previousApplyAllSettings=applyAllSettings;
+applyAllSettings=function(){
+  if(!speedEnabled()){
+    previousApplyAllSettings();
+    if(/; @GCE_SPEED /.test(ta.value))acceptProcessText(speedMetadata(ta.value));
+    return;
+  }
+  const errors=speedInputErrors();if(errors.length){showRepairReport([],errors,'入力を確認してください');return;}
+  const before=Object.fromEntries(speedSettingKeys.map(k=>[k,$(k).value]));
+  try{
+    // Validate the source before changing any settings or text.
+    applyThreadDerived();const result=threadGcode(ta.value,{temperatures:true});
+    acceptProcessText(result.text);$('speedSummary').textContent=speedPlanSummary(result.plan);
+    const remaining=collectRepairIssues();
+    showRepairReport([`糸径 ${$('threadDiameter').value} mm・目標速度 ${$('printSpeed').value} mm/s を保持して関連設定を反映しました。`,speedPlanSummary(result.plan),'G4停止時間とXYZ形状は保持しました。'],remaining.map(x=>x.title+'：'+x.detail),'一括反映＋自動検査が完了しました');
+  }catch(err){for(const [k,v] of Object.entries(before))$(k).value=v;showRepairReport([],[err.message],'設定は変更していません');}
+};
+const previousApplyRecommendedDesign=applyRecommendedDesign;
+applyRecommendedDesign=function(){if(!speedEnabled())return previousApplyRecommendedDesign();if(speedInputErrors().length){showRepairReport([],speedInputErrors(),'入力を確認してください');return;}applyThreadDerived();updateDesignModel();};
+$('applyDesignBtn').onclick=()=>applyRecommendedDesign();
+function prepareLayerGcode(text){return speedEnabled()?threadGcode(text,{temperatures:true}).text:text;}
+function makeInitialModel(){
+  if(speedEnabled())applyThreadDerived();
+  const original=LayerEngine.generate(Array.from({length:8},(_,i)=>LayerEngine.defaults(i)),layerProcess()).text;
+  return refreshLayerHash(prepareLayerGcode(original),original);
+}
+function restoreSpeedSettings(input){
+  const match=input.match(/^; @GCE_SPEED (.+)$/m);let config=null;
+  try{config=match?JSON.parse(match[1]):null;}catch{}
+  if(config?.version===1&&config.settings&&['thread','legacy'].includes(config.settings.speedMode)){
+    const s=config.settings;
+    const enums={speedMode:['thread','legacy'],flowSource:['profile','measured'],machine:Object.keys(MACHINES),material:Object.keys(MATERIALS),nozzle:['0.2','0.4','0.6','0.8']};
+    for(const key of speedSettingKeys){if(enums[key]?enums[key].includes(String(s[key])):Number.isFinite(+s[key])&&(key==='bedtemp'?+s[key]>=0:+s[key]>0))$(key).value=s[key];}
+  }else{
+    $('speedMode').value='legacy';const p=parseProcessMarker(input);
+    if(p){for(const [key,value] of Object.entries({nozzle:p.nozzle,lineWidth:p.width,layerHeight:p.height,flow:p.flow}))$(key).value=value;if(MATERIALS[p.material])$('material').value=p.material;}
+  }
+}
+const previousOpenFile=$('fileInput').onchange;
+$('fileInput').onchange=async e=>{const file=e.target.files[0];if(!file)return;const text=await file.text();restoreSpeedSettings(text);await previousOpenFile({target:{files:[{text:async()=>text}],value:''}});e.target.value='';updateDesignModel();};
+for(const id of ['speedMode','threadDiameter','firstSpeed','contactSpeed','contactZone','pathAccel','flowSource'])$(id).addEventListener('input',()=>updateDesignModel());
+
 // initial sample
-ta.value=LayerEngine.generate(Array.from({length:8},(_,i)=>LayerEngine.defaults(i)),layerProcess()).text;
+ta.value=makeInitialModel();
 // The bundled sample was authored for the original 0.8 mm setup.
-state.gcodeModel={nozzle:0.8,width:0.8,height:0.4,flow:+$("flow").value||0.98,material:$("material").value};
+state.gcodeModel=parseProcessMarker(ta.value)||uiProcessModel();
 reparse(false);saveHistory();
 updateDesignModel();updateTemperatureBadge();updateEstimateUI();
 requestAnimationFrame(()=>{resize();setView("iso");fitLayerModel()});
