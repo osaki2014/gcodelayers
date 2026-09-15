@@ -153,6 +153,9 @@ header{height:54px;display:flex;align-items:center;gap:14px;padding:0 14px;borde
 #profileSummary{display:block;font-weight:400;color:#527061}
 #profileDetails{white-space:pre-line;margin-top:8px;overflow-wrap:anywhere}
 #profileCompatibility{color:#885820}
+#speedPanel .threadDiameterControl{font-weight:700;color:#175d41;background:#fff;border:1px solid #91b7a1;border-radius:8px;padding:6px 9px}
+#speedPanel #threadDiameter{width:110px;font-size:16px;border:2px solid #2f7d5d;background:#fff;color:#152c20}
+#speedPanel #threadDiameter:focus{outline:3px solid #b8dfca;outline-offset:2px}
 
 </style>
 </head>
@@ -219,7 +222,8 @@ header{height:54px;display:flex;align-items:center;gap:14px;padding:0 14px;borde
 <section id="speedPanel" aria-label="糸径と区間別速度設計">
  <div class="speedControls">
   <label>設計方式<select id="speedMode"><option value="thread" selected>糸径から区間別に設計</option><option value="legacy">線幅・高さを手動設定</option></select></label>
-  <label>目標の糸径<input id="threadDiameter" type="number" value="0.34" min="0.05" max="2" step="0.01"> mm</label>
+  <label class="threadDiameterControl" for="threadDiameter">目標の糸径（変更可）<input id="threadDiameter" type="number" value="0.34" min="0.05" max="2" step="0.01" inputmode="decimal" aria-describedby="threadDiameterHelp"> mm</label>
+  <button id="applyThreadSettings" type="button" class="primary">糸径・速度から自動計算＋反映</button>
   <span class="layerNote">造形速度の入力は目標上限です。糸径と目標速度を保持してE・区間Fを計算します。</span>
   <details id="speedAdvanced"><summary>区間速度・流量の条件</summary>
    <div class="layerFields">
@@ -232,6 +236,7 @@ header{height:54px;display:flex;align-items:center;gap:14px;padding:0 14px;borde
    <p class="layerNote">実測MVSは使用する温度・ノズルで測定した値を入力してください。圧力補正は機体側の設定を使用し、Eへの二重補正は行いません。停止時間は各層の設定を保持します。</p>
   </details>
  </div>
+ <p id="threadDiameterHelp" class="layerNote">糸径は上の数値欄へ直接入力できます（0.05〜2 mm）。変更すると糸径設計に切り替わります。「自動計算＋反映」で関連設定とG-codeを更新し、検査します。</p>
  <p id="speedSummary" role="status"></p>
  <p class="layerNote">空中の糸は円形断面で計算。線幅・高さは同じ断面積になる平面線へ換算します。第1層の高さ・輪郭の変更は再検査で個別に確認します。接着と冷却の成立は試験造形で確認してください。</p>
 </section>
@@ -2485,7 +2490,7 @@ function drawLayerOverlay(){
   for(const p of points){ctx.beginPath();ctx.arc(p.x,p.y,4,0,Math.PI*2);ctx.fill();}ctx.restore();
 }
 // Do not silently export an older model while there are pending form edits.
-for(const id of ['saveGBtn','save3mfBtn','applySettings','formatBtn']){
+for(const id of ['saveGBtn','save3mfBtn','applySettings','applyThreadSettings','formatBtn']){
   $(id).addEventListener('click',e=>{
     if(id==='save3mfBtn'&&!state.segments.some(s=>s.extrude)){e.preventDefault();e.stopImmediatePropagation();layerMessage('モデルが空のため3MFを出力できません。層を追加してください。','pending');return;}
     if(layerEditor.dirty||layerEditor.drawing){e.preventDefault();e.stopImmediatePropagation();layerMessage('層の変更が未反映です。先に反映するか「入力を戻す」を押してください。','pending');}
@@ -2991,7 +2996,7 @@ function speedPlanSummary(plan){
   return `目標 ${$('printSpeed').value} mm/s → 区間F ${fmt(plan.min,2)}〜${fmt(plan.max,2)} mm/s / 最大Q ${fmt(plan.q,3)} mm³/s。制約：`+Object.entries(plan.counts).map(([k,n])=>`${names[k]} ${n}区間`).join('、');
 }
 function updateSpeedDesign(){
-  const on=speedEnabled();$('threadDiameter').disabled=!on;$('speedAdvanced').hidden=!on;
+  const on=speedEnabled();$('threadDiameter').disabled=false;$('speedAdvanced').hidden=!on;
   $('flowCaption').textContent=on?'目標速度での流量':'現在の流量';$('speedCaption').textContent=on?'流量からの目安':'推奨造形速度';
   $('applyDesignBtn').textContent=on?'糸径・速度から関連設定を入力':'推奨値を入力欄へ';
   $('applySettings').textContent='一括反映＋自動検査';
@@ -3062,7 +3067,13 @@ function restoreSpeedSettings(input){
 }
 const previousOpenFile=$('fileInput').onchange;
 $('fileInput').onchange=async e=>{const file=e.target.files[0];if(!file)return;const text=await file.text();restoreSpeedSettings(text);await previousOpenFile({target:{files:[{text:async()=>text}],value:''}});e.target.value='';updateDesignModel();};
-for(const id of ['speedMode','threadDiameter','firstSpeed','contactSpeed','contactZone','pathAccel','flowSource'])$(id).addEventListener('input',()=>updateDesignModel());
+for(const id of ['speedMode','firstSpeed','contactSpeed','contactZone','pathAccel','flowSource'])$(id).addEventListener('input',()=>updateDesignModel());
+$('threadDiameter').addEventListener('input',()=>{
+  $('speedMode').value='thread';updateDesignModel();
+});
+$('applyThreadSettings').onclick=()=>{
+  $('speedMode').value='thread';applyAllSettings();
+};
 
 /* AMS export compiler. Model E/F and coordinates are never rewritten here.
    Machine service positions/protocol: BambuStudio official A1 mini, A1, P1S
