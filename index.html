@@ -148,6 +148,11 @@ header{height:54px;display:flex;align-items:center;gap:14px;padding:0 14px;borde
 @media(max-width:650px){#jumpLayers{display:block}.layerHeading{scroll-margin-top:10px}}
  #reviewDialog{max-width:620px;width:calc(100% - 48px);border:1px solid #b9cdc0;border-radius:16px;padding:24px;color:#243a30;box-shadow:0 20px 80px #0004}#reviewDialog::backdrop{background:#14291d77}#reviewDialog h2{font-size:20px}#reviewDetail{line-height:1.7}#reviewDialog .layerActions{justify-content:flex-end}
 #speedPanel{border-bottom:1px solid #d3dfd7;background:#f4f9f5;padding:8px 14px;font-size:12px} .speedControls{display:flex;align-items:center;gap:14px;flex-wrap:wrap}.speedControls label{display:flex;align-items:center;gap:7px}.speedControls input{width:90px}.speedControls select{max-width:230px}#speedSummary{margin:6px 0;color:#245c42;font-weight:600}#speedAdvanced[open]{flex-basis:100%}#speedAdvanced .layerFields{max-width:750px}#speedPanel .layerNote{margin:4px 0}#speedAdvanced .layerFields label{display:block}
+.profilePanel{padding:10px;border-bottom:1px solid #dbe5df;font-size:11px;line-height:1.6}
+.profilePanel summary{font-weight:700;cursor:pointer}
+#profileSummary{display:block;font-weight:400;color:#527061}
+#profileDetails{white-space:pre-line;margin-top:8px;overflow-wrap:anywhere}
+#profileCompatibility{color:#885820}
 
 </style>
 </head>
@@ -168,10 +173,10 @@ header{height:54px;display:flex;align-items:center;gap:14px;padding:0 14px;borde
   <div class="field"><label>機種</label><select id="machine">
     <option value="a1mini">Bambu Lab A1 mini</option>
     <option value="a1">Bambu Lab A1</option>
-    <option value="p1s">Bambu Lab P1S</option>
+    <option value="p1s">Bambu Lab P1S</option><option value="x1e">Bambu Lab X1E</option><option value="x2d">Bambu Lab X2D（左ノズル）</option><option value="h2d">Bambu Lab H2D（左ノズル）</option>
   </select></div>
   <div class="field"><label>素材</label><select id="material">
-    <option value="pla_basic">Bambu PLA Basic</option>
+    <option value="pla_basic">Bambu PLA Basic</option><option value="pla_matte">Bambu PLA Matte</option><option value="pla_glow">Bambu PLA Glow</option><option value="tpu_ams">Bambu TPU for AMS（68D）</option>
     <option value="generic_pla">Generic PLA</option>
     <option value="petg_hf">Bambu PETG HF</option>
     <option value="generic_petg">Generic PETG</option>
@@ -232,7 +237,13 @@ header{height:54px;display:flex;align-items:center;gap:14px;padding:0 14px;borde
 </section>
 
 <div id="workspace">
-<aside id="layerPanel" aria-label="層ごとの編集">
+<aside id="layerPanel" aria-label="層ごとの編集"><details id="profilePanel" class="profilePanel">
+  <summary>機種・材料の適用値 <span id="profileSummary"></span></summary>
+  <div id="profileDetails"></div>
+  <p id="profileCompatibility" role="status"></p>
+  <p>標準流量ホットエンド・Textured PEI Plate用です。X2D／H2Dでは左ノズルを使用し、AMSも左側へ接続・割当してください。材料・温度は全層共通です。変更後に「一括反映＋自動検査」を押すと、G-codeのE・F・温度・冷却へ反映します。</p>
+</details>
+
   <div class="layerHeading"><b>層ごとの編集</b><span id="layerCount" class="badge ok">8 層</span><button id="layerUndo" title="元に戻す（⌘ / Ctrl + Z）">↶ 元に戻す</button></div>
   <div class="layerActions"><button id="addLayer" class="primary">＋ 最上部に層を追加</button><button id="removeLayer" class="danger">この層を削除</button></div>
   <label class="layerCheck"><input id="alternateNew" type="checkbox" checked>追加時は位相を反転（180°−下の位相）</label>
@@ -883,7 +894,7 @@ function updateDesignModel(){
    `w=${fmt(r.w,3)} mm, h=${fmt(r.h,3)} mm → A=${fmt(r.A,4)} mm²<br>`+
    `Bambu/材料MVS=${fmt(r.mvs,2)} mm³/s、粘性・ノズル補正Q=${fmt(r.qPressure,2)} mm³/s → 採用Qmax=<b>${fmt(r.qLimit,2)} mm³/s</b><br>`+
    `v_max = Qmax/(A×Flow) = <b>${fmt(r.vmax,2)} mm/s</b>、安全率 ${fmt(r.safety*100,0)}% → v_rec=<b>${fmt(r.vrec,2)} mm/s</b><br>`+
-   `現在Q=${fmt(r.currentQ,3)} mm³/s、壁せん断速度 γ̇w=${fmt(r.gamma,0)} s⁻¹、見かけ粘度 η=${Number.isFinite(r.eta)?fmt(r.eta,2):"—"} Pa·s、圧力比 ΔP/ΔPref=${fmt(r.pRatio,3)}<br>`+
+   `現在Q=${fmt(r.currentQ,3)} mm³/s、壁せん断速度 γ̇w=${fmt(r.gamma,0)} s⁻¹、見かけ粘度 η=${Number.isFinite(r.eta)?fmt(r.eta,2):"—"} Pa·s、圧力比 ΔP/ΔPref=${(Number.isFinite(r.pRatio)?fmt(r.pRatio,3):"—")}<br>`+
    `100 mmの線に必要なE ≈ <b>${fmt(r.e100,3)} mm</b>（Flow=${fmt(r.flow,3)}）<br>`+
    `非造形移動のアプリ初期値: <b>${fmt(r.travel,0)} mm/s</b>`;
  updateSpeedDesign();
@@ -1658,8 +1669,8 @@ function replacePositiveTemperature(line,cmd,value){
 }
 
 function materialSafety(){
- const mat=MATERIALS[$("material").value];
- return{hotMin:mat.hotendRange?.[0]??150,hotMax:mat.hotendRange?.[1]??300,bedMin:mat.bedRange?.[0]??0,bedMax:mat.bedRange?.[1]??120};
+ const mat=MATERIALS[$("material").value],mach=MACHINES[$("machine").value];
+ return{hotMin:mat.hotendRange?.[0]??150,hotMax:Math.min(mat.hotendRange?.[1]??300,mach.hotMax??300),bedMin:mat.bedRange?.[0]??0,bedMax:Math.min(mat.bedRange?.[1]??120,mach.bedMax??120)};
 }
 function findExtrusionRange(lines){
  let absE=true,e=0,first=-1,last=-1;
@@ -2067,7 +2078,7 @@ $("save3mfBtn").onclick=async()=>{
    const model=`<?xml version="1.0" encoding="UTF-8"?><model unit="millimeter" xml:lang="en-US" xmlns="http://schemas.microsoft.com/3dmanufacturing/core/2015/02" xmlns:BambuStudio="http://schemas.bambulab.com/package/2021"><metadata name="Application">BambuStudio-02.05.00.66</metadata><metadata name="BambuStudio:3mfVersion">1</metadata><metadata name="Title">Gcode Layer Editor toolpath</metadata><metadata name="Description">Custom G-code generated by Gcode Layer Editor. Do not re-slice.</metadata><resources/><build/></model>`;
    const modelrels=`<?xml version="1.0" encoding="UTF-8"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Target="/Metadata/plate_1.gcode" Id="rel-1" Type="http://schemas.bambulab.com/package/2021/gcode"/></Relationships>`;
    const modelsettings=`<?xml version="1.0" encoding="UTF-8"?><config><plate><metadata key="plater_id" value="1"/><metadata key="plater_name" value="Gcode Layer Editor"/><metadata key="locked" value="false"/><metadata key="filament_maps" value="${Array(amsInfo().count).fill(1).join(' ')}"/><metadata key="gcode_file" value="Metadata/plate_1.gcode"/><metadata key="thumbnail_file" value="Metadata/plate_1.png"/></plate></config>`;
-   const slice=`<?xml version="1.0" encoding="UTF-8"?><config><header><header_item key="X-BBL-Client-Type" value="slicer"/><header_item key="X-BBL-Client-Version" value="02.05.00.66"/></header><plate><metadata key="index" value="1"/><metadata key="printer_model_id" value="${mach.modelId}"/><metadata key="nozzle_diameters" value="${noz}"/><metadata key="prediction" value="${pred}"/><metadata key="weight" value="${grams.toFixed(2)}"/><metadata key="gcode_editor_motion_time" value="${Math.round(est.motionTime)}"/><metadata key="gcode_editor_naive_motion_time" value="${Math.round(est.naiveMotionTime)}"/><metadata key="gcode_editor_accel_time" value="${Math.round(est.accelTime)}"/><metadata key="gcode_editor_cruise_time" value="${Math.round(est.cruiseTime)}"/><metadata key="gcode_editor_decel_time" value="${Math.round(est.decelTime)}"/><metadata key="gcode_editor_triangular_blocks" value="${est.triangularBlocks}"/><metadata key="gcode_editor_heater_wait_time" value="${Math.round(est.heatWait)}"/><metadata key="gcode_editor_filament_length_mm" value="${amsLength.toFixed(2)}"/><metadata key="outside" value="false"/><object identify_id="1" name="Gcode Layer Editor_path" skipped="false"/>${amsFilamentXml(ams,mat,noz)}<nozzle id="0" extruder_id="1" nozzle_diameter="${noz}" volume_type="Standard"/></plate></config>`;
+   const slice=`<?xml version="1.0" encoding="UTF-8"?><config><header><header_item key="X-BBL-Client-Type" value="slicer"/><header_item key="X-BBL-Client-Version" value="02.05.00.66"/></header><plate><metadata key="index" value="1"/><metadata key="printer_model_id" value="${mach.modelId}"/><metadata key="nozzle_diameters" value="${mach.dual?[noz,noz].join(','):noz}"/><metadata key="prediction" value="${pred}"/><metadata key="weight" value="${grams.toFixed(2)}"/><metadata key="gcode_editor_motion_time" value="${Math.round(est.motionTime)}"/><metadata key="gcode_editor_naive_motion_time" value="${Math.round(est.naiveMotionTime)}"/><metadata key="gcode_editor_accel_time" value="${Math.round(est.accelTime)}"/><metadata key="gcode_editor_cruise_time" value="${Math.round(est.cruiseTime)}"/><metadata key="gcode_editor_decel_time" value="${Math.round(est.decelTime)}"/><metadata key="gcode_editor_triangular_blocks" value="${est.triangularBlocks}"/><metadata key="gcode_editor_heater_wait_time" value="${Math.round(est.heatWait)}"/><metadata key="gcode_editor_filament_length_mm" value="${amsLength.toFixed(2)}"/><metadata key="outside" value="false"/><object identify_id="1" name="Gcode Layer Editor_path" skipped="false"/>${amsFilamentXml(ams,mat,noz)}<nozzle id="${mach.dual?1:0}" extruder_id="1" nozzle_diameter="${noz}" volume_type="Standard"/></plate></config>`;
    const plateJson=JSON.stringify({bbox_all:[minx,miny,maxx,maxy],bbox_objects:[{area:(maxx-minx)*(maxy-miny),bbox:[minx,miny,maxx,maxy],id:1,layer_height:+$("layerHeight").value,name:"Gcode Layer Editor_path"}],bed_type:"textured_plate",filament_colors:ams.slots.map(()=>"#FFFFFF"),filament_ids:ams.slots,first_extruder:ams.sequence[0]-1,is_seq_print:false,nozzle_diameter:noz,version:2});
    const entries=[
      ["[Content_Types].xml",ct],["Metadata/plate_1.png",large],["Metadata/plate_1_small.png",small],["Metadata/bbl_thumbnail.png",large],
@@ -2630,10 +2641,10 @@ function collectRepairIssues(){
     for(const s of ext)for(const pt of [s.a,s.b]){bounds.minX=Math.min(bounds.minX,pt.x);bounds.minY=Math.min(bounds.minY,pt.y);bounds.maxX=Math.max(bounds.maxX,pt.x);bounds.maxY=Math.max(bounds.maxY,pt.y);}
     const margin=Math.max(p.nozzle,p.width)/2;
     const outside=bounds.minX<margin||bounds.minY<margin||bounds.maxX>mach.bed[0]-margin||bounds.maxY>mach.bed[1]-margin;
-    const excluded=$('machine').value==='p1s'&&ext.some(s=>segmentHitsRect(s,-margin,-margin,18+margin,28+margin));
+    const excluded=!!mach.excluded&&ext.some(s=>segmentHitsRect(s,-margin,-margin,18+margin,28+margin));
     if(outside||excluded){
       const dx=mach.bed[0]/2-(bounds.minX+bounds.maxX)/2,dy=mach.bed[1]/2-(bounds.minY+bounds.maxY)/2;
-      const fits=bounds.maxX-bounds.minX+2*margin<mach.bed[0]&&bounds.maxY-bounds.minY+2*margin<mach.bed[1]&&canTranslateModel()&&($('machine').value!=='p1s'||!ext.some(s=>segmentHitsRect({a:{x:s.a.x+dx,y:s.a.y+dy},b:{x:s.b.x+dx,y:s.b.y+dy}},-margin,-margin,18+margin,28+margin)));
+      const fits=bounds.maxX-bounds.minX+2*margin<mach.bed[0]&&bounds.maxY-bounds.minY+2*margin<mach.bed[1]&&canTranslateModel()&&(!mach.excluded||!ext.some(s=>segmentHitsRect({a:{x:s.a.x+dx,y:s.a.y+dy},b:{x:s.b.x+dx,y:s.b.y+dy}},-margin,-margin,18+margin,28+margin)));
       add('plate','機種のプレート範囲との干渉',`${mach.name}: ${mach.bed[0]}×${mach.bed[1]} mm。線幅・ノズル半径 ${fmt(margin,3)} mm を含む軌跡が${excluded?'P1Sの除外領域 X0〜18 / Y0〜28 mm':'プレート外周'}にかかります。\n${fits?`全モデルをプレート中央へ移動します（X ${fmt(dx,3)} / Y ${fmt(dy,3)} mm）。`:'中央移動だけでは収まりません。輪郭の寸法・配置を手動で縮小／修正してください。'}`,fits?()=>translateModel(dx,dy,0):null);
     }
     const highest=ext.reduce((v,s)=>Math.max(v,s.a.z,s.b.z),0);
@@ -2644,6 +2655,7 @@ function collectRepairIssues(){
   const safe=materialSafety(),lines=ta.value.split(/\r?\n/),er=findExtrusionRange(lines);
   lines.forEach((raw,i)=>{if(i>er.last&&er.last>=0)return;const m=raw.split(';')[0].trim().match(/^M(104|109|140|190)\b.*?\bS(-?\d+(?:\.\d+)?)/i);if(!m)return;
     const hot=['104','109'].includes(m[1]),v=+m[2],lo=hot?safe.hotMin:safe.bedMin,hi=hot?safe.hotMax:safe.bedMax;
+    if(isIdleHeaterOff(raw))return;
     if(v>=lo&&v<=hi||!hot&&v===0)return;
     const target=clamp(+(hot?$('hotend'):$('bedtemp')).value,lo,hi);
     add('temp-'+i,`L${i+1}の${hot?'ノズル':'ベッド'}温度`,`${raw}\n材料の検査範囲 ${lo}〜${hi} ℃から外れています。この行を ${target} ℃へ修正します。`,()=>{const ls=ta.value.split(/\r?\n/);ls[i]=setSValue(ls[i],target);acceptProcessText(ls.join('\n'));});
@@ -2884,7 +2896,7 @@ if(typeof module!=='undefined')module.exports=SpeedEngine;
 function speedEnabled(){return $('speedMode').value==='thread';}
 function speedInputErrors(){
   const errors=[];
-  for(const [id,min,max,label] of [['threadDiameter',.05,2,'目標の糸径'],['printSpeed',.1,500,'目標造形速度'],['firstSpeed',.1,100,'第1層速度'],['contactSpeed',.1,100,'接着速度'],['contactZone',.05,10,'接着距離'],['pathAccel',10,20000,'造形加速度']]){
+  for(const [id,min,max,label] of [['threadDiameter',.05,2,'目標の糸径'],['printSpeed',.1,MACHINES[$('machine').value].estimate.maxXY,'目標造形速度'],['firstSpeed',.1,100,'第1層速度'],['contactSpeed',.1,100,'接着速度'],['contactZone',.05,10,'接着距離'],['pathAccel',10,20000,'造形加速度']]){
     const v=+$(id).value;if(!Number.isFinite(v)||v<min||v>max)errors.push(`${label}は${min}〜${max}の数値にしてください。`);
   }
   if($('flowSource').value==='measured'&&!(+$('mvs').value>0))errors.push('実測MVSを0より大きい数値で入力してください。');
@@ -3059,7 +3071,7 @@ for(const id of ['speedMode','threadDiameter','firstSpeed','contactSpeed','conta
 const AmsEngine=(()=>{
   const area=Math.PI*1.75**2/4;
   const num=(n,d=5)=>Number(n.toFixed(d)).toString();
-  const machines={a1mini:{height:180,cutX:180,wipeX:-13.5,wipeNear:-3.5,purgeY:90},a1:{height:256,cutX:267,wipeX:-48.2,wipeNear:-38.2,purgeY:128},p1s:{height:256}};
+  const machines={a1mini:{height:180,cutX:180,wipeX:-13.5,wipeNear:-3.5,purgeY:90},a1:{height:256,cutX:267,wipeX:-48.2,wipeNear:-38.2,purgeY:128},p1s:{height:256,coreXY:true},x1e:{height:250,coreXY:true},x2d:{height:260,dual:true},h2d:{height:320,dual:true}};
   function slots(layers){return layers.map(l=>{const slot=l.amsSlot??1;if(!Number.isInteger(slot)||slot<1||slot>4)throw Error('AMS番号は1〜4の整数にしてください。');return slot;});}
   // The wrappers are removable when reopening an exported file. Hash verification
   // prevents silently dropping a service block that someone manually modified.
@@ -3081,30 +3093,56 @@ const AmsEngine=(()=>{
   function seal(text){
     return text.replace(/^; GCE_AMS_BEGIN [a-f0-9]+\n([\s\S]*?)\n; GCE_AMS_END/gm,(_,block)=>'; GCE_AMS_BEGIN '+LayerEngine.hash(block)+'\n'+block+'\n; GCE_AMS_END');
   }
+  // H2D/X2D firmware owns cutting, purging and wiping via M620.10 S1 + T.
+  // H-1 is the official static-nozzle-map value (GCode.cpp NOZZLE_ID_FOR_GCODE).
+  // The project maps every logical filament to left extruder 1, physical heater 1.
+  function dualExchange(slot,state,options,initial,safe){
+    const tool=slot-1,previous=state.slot===null?tool:state.slot-1,x2=options.machine==='x2d',B=x2?' B':'';
+    const length=options.flushVolume/area,feed=num(Math.min(6,options.mvs)*60/area*(x2?1:.8),3),temp=num(options.hotend),n=num(options.nozzle);
+    const o=['; AMS '+slot+' left nozzle','M400','G90','M83'];
+    if(initial){o.push(...(options.config||[]),'M620 M');}
+    if(!x2)o.push('M993 A2 B2 C2','M993 A0 B0 C0');
+    o.push(`M620 S${tool}A${B} H-1`,'M1002 gcode_claim_action : 4',`G1 Z${num(safe)} F1200`,'M400','M106 P1 S0','M106 P2 S0');
+    for(const a of [0,1])o.push(`M620.10 A${a} F${feed} L${num(length)} H${n} T${temp} P${temp} S1`);
+    o.push(`M620.11 P0${x2?' L0':''} I${previous} B-1 E0`,`M620.11 K0 I${previous} B-1 R0`,`M620.15 C${temp}`);
+    if(x2)o.push(`M620.22 I${tool} P1`);
+    else o.push('M628 S1',`M620.11 S1 L0 I${previous} B-1 R10 D8 E-10 F200`,'M629','M620.11 H0');
+    o.push(`T${tool} H-1`,'M400','G90','M83',`M1002 set_filament_type:${options.materialType||'PLA'}`,'M620.10 R0','M628 S0','M629',`M109 S${temp} T1`,
+      `M983.3 F${num(Math.min(6,options.mvs)/2.4)} A0.4 R0`,'M400',`G1 Z${num(safe)} F1200`);
+    if(!x2)o.push('G1 Y295 F18000','G1 Y265 F18000');
+    o.push(`M621 S${tool}A${B}`,`M620.6 I${tool} H-1 W1`);
+    if(!x2)o.push('M993 A3 B3 C3');
+    if(x2)o.push('G1 Y256 F18000');
+    o.push(`G0 X${num(state.x)} Y${num(state.y)} F${num(Math.min(options.travel,200)*60,2)}`);
+    for(const [p,v] of Object.entries(state.fans))o.push(`M106 P${p} S${v}`);
+    o.push(`M204 S${num(state.accel)}`,`G92 E${num(state.e,5)}`,state.absE?'M82':'M83',`G1 F${num(state.feed,2)}`,'M1002 gcode_claim_action : 0');
+    return o;
+  }
   function exchange(slot,state,options,initial){
     const m=machines[options.machine],safe=Math.max(state.maxZ,state.z)+3;
     if(safe>m.height)throw Error(`AMS交換の退避高さ ${num(safe)} mm が機体の高さ上限 ${m.height} mm を超えます。層の高さを下げてください。`);
+    if(m.dual)return dualExchange(slot,state,options,initial,safe);
     const tool=slot-1,feed=num(Math.min(6,options.mvs)*60/area,2),temp=num(options.hotend),length=options.flushVolume/area;
     const o=['; AMS '+slot+(initial?' initial load':' layer change'),'M400','G90','M83'];
     if(initial)o.push('M620 M'); // Logical filament to AMS tray remapping, as in Bambu start code.
-    if(options.machine!=='p1s')o.push('M211 S','M211 X0 Y0 Z0','G392 S0','M1007 S0');
+    if(!m.coreXY)o.push('M211 S','M211 X0 Y0 Z0','G392 S0','M1007 S0');
     o.push(`M620 S${tool}A`,`G1 Z${num(safe)} F1200`,'M106 P1 S0','M106 P2 S0',`M104 S${temp}`);
-    if(options.machine==='p1s')o.push('G1 X70 F12000','G1 Y245','G1 Y265 F3000','M400','M620.11 S0','G1 X90 F3000','G1 Y255 F4000','G1 X100 F5000','G1 X120 F12000','G1 X20 Y50 F12000','G1 Y-3');
+    if(m.coreXY)o.push('G1 X70 F12000','G1 Y245','G1 Y265 F3000','M400',...(options.machine==='p1s'?['M620.11 S0']:[]),'G1 X90 F3000','G1 Y255 F4000','G1 X100 F5000','G1 X120 F12000','G1 X20 Y50 F12000','G1 Y-3');
     else o.push(`G1 X${m.cutX} F12000`,'M400','M620.11 S0');
     o.push(`M620.1 E F${feed} T${temp}`);
-    if(options.machine!=='p1s')o.push(`M620.10 A0 F${feed}`);
+    if(!m.coreXY)o.push(`M620.10 A0 F${feed}`);
     o.push(`T${tool}`,`M620.1 E F${feed} T${temp}`);
-    if(options.machine!=='p1s')o.push(`M620.10 A1 F${feed} L${num(length)} H${num(options.nozzle)} T${temp}`,`G1 Y${m.purgeY} F9000`,'M400','M620.11 S0','M628 S0');
+    if(!m.coreXY)o.push(`M620.10 A1 F${feed} L${num(length)} H${num(options.nozzle)} T${temp}`,`G1 Y${m.purgeY} F9000`,'M400','M620.11 S0','M628 S0');
     // T is a firmware macro: explicitly establish the purge position and modes.
     o.push('G90','M83');
-    if(options.machine==='p1s')o.push('G1 X54 F12000','G1 Y265 F3000');
+    if(m.coreXY)o.push('G1 X54 F12000','G1 Y265 F3000');
     else o.push(`G1 X${m.wipeX} F3000`);
     o.push('G92 E0',`M109 S${temp}`,'M106 P1 S60','; FLUSH_START');
     // Split long purges with retraction and shaking to detach waste into the chute.
     const count=Math.ceil(length/45),chunk=length/count;
     function wipe(){
       o.push('M400','M106 P1 S178','M400 S3');
-      if(options.machine==='p1s')o.push('G1 X70 F5000','G1 X90 F3000','G1 Y255 F4000','G1 X105 F5000','G1 Y265 F5000','G1 X70 F10000','G1 X100 F5000','G1 X70 F10000','G1 X100 F5000');
+      if(m.coreXY)o.push('G1 X70 F5000','G1 X90 F3000','G1 Y255 F4000','G1 X105 F5000','G1 Y265 F5000','G1 X70 F10000','G1 X100 F5000','G1 X70 F10000','G1 X100 F5000');
       else for(let i=0;i<4;i++)o.push(`G1 X${m.wipeNear} F12000`,`G1 X${m.wipeX} F3000`);
       o.push('M400','M106 P1 S60');
     }
@@ -3113,9 +3151,9 @@ const AmsEngine=(()=>{
       if(n+1<count){o.push('G1 E-0.8 F1800');wipe();o.push('G1 E0.8 F300');}
     }
     o.push('; FLUSH_END','G1 E-0.8 F1800');wipe();
-    if(options.machine!=='p1s')o.push('M629');
+    if(!m.coreXY)o.push('M629');
     o.push(`M621 S${tool}A`,'G90','M83','G1 E0.8 F300','M400');
-    if(options.machine==='p1s')o.push('G1 X165 F12000','G1 Y256 F6000');
+    if(m.coreXY)o.push('G1 X165 F12000','G1 Y256 F6000');
     else o.push('G392 S0','M1007 S1','M211 R');
     // Return above the last model point; the next layer's existing travel descends.
     // Never travel horizontally below the highest printed (nonplanar) point.
@@ -3130,9 +3168,9 @@ const AmsEngine=(()=>{
     if(!meta?.layers.length||!meta.layers.some(l=>l.amsSlot!==undefined))return {text:input,slots:[1],sequence:[1],changes:0,usage:{1:0},active:false};
     const selected=slots(meta.layers),m=machines[options.machine];
     if(!m)throw Error('この機種のAMS交換には対応していません。');
-    for(const [key,min,max] of [['hotend',143,300],['mvs',.01,100],['nozzle',.2,.8],['travel',.1,500],['accel',10,20000],['flushVolume',50,800]])if(!Number.isFinite(options[key])||options[key]<min||options[key]>max)throw Error(`AMS出力の ${key} は${min}〜${max}にしてください。`);
+    for(const [key,min,max] of [['hotend',143,options.hotMax||300],['mvs',.01,100],['nozzle',.2,.8],['travel',.1,1000],['accel',10,20000],['flushVolume',50,800]])if(!Number.isFinite(options[key])||options[key]<min||options[key]>max)throw Error(`AMS出力の ${key} は${min}〜${max}にしてください。`);
     const lines=input.split(/\r?\n/),out=[],seen=[],sequence=[],usage=Object.fromEntries([...new Set(selected)].map(n=>[n,0]));
-    const state={x:0,y:0,z:0,maxZ:0,e:0,absE:true,feed:options.travel*60,accel:options.accel,fans:{1:0,2:0}};
+    const state={x:0,y:0,z:0,maxZ:0,e:0,absE:true,feed:options.travel*60,accel:options.accel,fans:{1:0,2:0},slot:null};
     let current=null,layer=-1,homed=false;
     for(const raw of lines){
       const c=raw.split(';')[0].trim().toUpperCase(),lm=raw.match(/^; GCE_LAYER: (-?\d+)$/),sm=raw.match(/^; GCE_AMS_SLOT: (\d+)$/);
@@ -3142,7 +3180,7 @@ const AmsEngine=(()=>{
         if(!homed)throw Error('AMS交換の前に原点復帰G28が必要です。');
         const block=exchange(selected[layer],state,options,current===null);
         out.push('; GCE_AMS_BEGIN '+LayerEngine.hash(block.join('\n')),...block,'; GCE_AMS_END');
-        current=selected[layer];sequence.push(current);usage[current]+=options.flushVolume/area;
+        current=selected[layer];state.slot=current;sequence.push(current);usage[current]+=options.flushVolume/area;
       }
       if(/^T[0-3]\b/.test(c)){
         if(layer>=0)throw Error('モデル内に直接入力したT命令があります。AMS番号は層の設定で指定してください。');
@@ -3175,7 +3213,11 @@ const AmsEngine=(()=>{
 if(typeof module!=='undefined')module.exports=AmsEngine;
 
 /* AMS service moves exist only in exported files, never in geometry/E repairs. */
-function amsOptions(){return {machine:$('machine').value,hotend:+$('hotend').value,nozzle:+$('nozzle').value,mvs:+$('mvs').value,travel:+$('travelSpeed').value,accel:speedEnabled()?+$('pathAccel').value:MACHINES[$('machine').value].estimate.printAccel,flushVolume:+$('amsFlushVolume').value};}
+function amsOptions(){
+  const m=MACHINES[$('machine').value],mat=MATERIALS[$('material').value];
+  if(mat.supported===false)throw Error('この機種と材料に対応するノズル径を選んでください。0.4 mmの公式設定が利用できます。');
+  return {machine:$('machine').value,hotend:+$('hotend').value,hotMax:m.hotMax,nozzle:+$('nozzle').value,mvs:+$('mvs').value,travel:+$('travelSpeed').value,accel:speedEnabled()?+$('pathAccel').value:m.estimate.printAccel,flushVolume:+$('amsFlushVolume').value,materialType:mat.type,config:m.dual?makeConfigBlock():null};
+}
 function amsInfo(text=ta.value){
   const meta=LayerEngine.decode(text),slots=meta?.layers.length?AmsEngine.slots(meta.layers):[1];
   return {slots:[...new Set(slots)].sort(),first:slots[0],count:Math.max(...slots),sequence:slots.filter((n,i)=>!i||n!==slots[i-1])};
@@ -3235,6 +3277,2736 @@ function amsFilamentXml(result,mat,nozzle){
     return `<filament id="${slot}" tray_info_idx="${xml(mat.id)}" type="${xml(mat.type)}" color="#FFFFFF" used_m="${(length/1000).toFixed(5)}" used_g="${grams.toFixed(3)}" used_for_object="true" used_for_support="false" group_id="0" nozzle_diameter="${nozzle.toFixed(2)}" volume_type="Standard"/>`;
   }).join('');
 }
+
+const BambuProfiles = {
+  "date": "2026-09-15",
+  "source": "https://github.com/bambulab/BambuStudio/tree/master/resources/profiles/BBL",
+  "materials": {
+    "pla_basic": {
+      "name": "Bambu PLA Basic",
+      "profiles": {
+        "a1mini/0.2": {
+          "name": "Bambu PLA Basic @BBL A1M 0.2 nozzle",
+          "file": "Bambu PLA Basic @BBL A1M 0.2 nozzle.json",
+          "id": "GFA00",
+          "type": "PLA",
+          "density": 1.26,
+          "flow": 0.98,
+          "mvs": 2.0,
+          "nozzle": 220.0,
+          "firstNozzle": 220.0,
+          "bed": 65.0,
+          "hotendRange": [
+            190.0,
+            240.0
+          ],
+          "fanMin": 60.0,
+          "fanMax": 80.0,
+          "fanOffLayers": 1.0,
+          "vitrification": 45.0
+        },
+        "a1mini/0.4": {
+          "name": "Bambu PLA Basic @BBL A1M",
+          "file": "Bambu PLA Basic @BBL A1M.json",
+          "id": "GFA00",
+          "type": "PLA",
+          "density": 1.26,
+          "flow": 0.98,
+          "mvs": 21.0,
+          "nozzle": 220.0,
+          "firstNozzle": 220.0,
+          "bed": 65.0,
+          "hotendRange": [
+            190.0,
+            240.0
+          ],
+          "fanMin": 60.0,
+          "fanMax": 80.0,
+          "fanOffLayers": 1.0,
+          "vitrification": 45.0
+        },
+        "a1mini/0.6": {
+          "name": "Bambu PLA Basic @BBL A1M",
+          "file": "Bambu PLA Basic @BBL A1M.json",
+          "id": "GFA00",
+          "type": "PLA",
+          "density": 1.26,
+          "flow": 0.98,
+          "mvs": 21.0,
+          "nozzle": 220.0,
+          "firstNozzle": 220.0,
+          "bed": 65.0,
+          "hotendRange": [
+            190.0,
+            240.0
+          ],
+          "fanMin": 60.0,
+          "fanMax": 80.0,
+          "fanOffLayers": 1.0,
+          "vitrification": 45.0
+        },
+        "a1mini/0.8": {
+          "name": "Bambu PLA Basic @BBL A1M",
+          "file": "Bambu PLA Basic @BBL A1M.json",
+          "id": "GFA00",
+          "type": "PLA",
+          "density": 1.26,
+          "flow": 0.98,
+          "mvs": 21.0,
+          "nozzle": 220.0,
+          "firstNozzle": 220.0,
+          "bed": 65.0,
+          "hotendRange": [
+            190.0,
+            240.0
+          ],
+          "fanMin": 60.0,
+          "fanMax": 80.0,
+          "fanOffLayers": 1.0,
+          "vitrification": 45.0
+        },
+        "a1/0.2": {
+          "name": "Bambu PLA Basic @BBL A1 0.2 nozzle",
+          "file": "Bambu PLA Basic @BBL A1 0.2 nozzle.json",
+          "id": "GFA00",
+          "type": "PLA",
+          "density": 1.26,
+          "flow": 0.98,
+          "mvs": 2.0,
+          "nozzle": 220.0,
+          "firstNozzle": 220.0,
+          "bed": 65.0,
+          "hotendRange": [
+            190.0,
+            240.0
+          ],
+          "fanMin": 60.0,
+          "fanMax": 80.0,
+          "fanOffLayers": 1.0,
+          "vitrification": 45.0
+        },
+        "a1/0.4": {
+          "name": "Bambu PLA Basic @BBL A1",
+          "file": "Bambu PLA Basic @BBL A1.json",
+          "id": "GFA00",
+          "type": "PLA",
+          "density": 1.26,
+          "flow": 0.98,
+          "mvs": 21.0,
+          "nozzle": 220.0,
+          "firstNozzle": 220.0,
+          "bed": 65.0,
+          "hotendRange": [
+            190.0,
+            240.0
+          ],
+          "fanMin": 60.0,
+          "fanMax": 80.0,
+          "fanOffLayers": 1.0,
+          "vitrification": 45.0
+        },
+        "a1/0.6": {
+          "name": "Bambu PLA Basic @BBL A1",
+          "file": "Bambu PLA Basic @BBL A1.json",
+          "id": "GFA00",
+          "type": "PLA",
+          "density": 1.26,
+          "flow": 0.98,
+          "mvs": 21.0,
+          "nozzle": 220.0,
+          "firstNozzle": 220.0,
+          "bed": 65.0,
+          "hotendRange": [
+            190.0,
+            240.0
+          ],
+          "fanMin": 60.0,
+          "fanMax": 80.0,
+          "fanOffLayers": 1.0,
+          "vitrification": 45.0
+        },
+        "a1/0.8": {
+          "name": "Bambu PLA Basic @BBL A1",
+          "file": "Bambu PLA Basic @BBL A1.json",
+          "id": "GFA00",
+          "type": "PLA",
+          "density": 1.26,
+          "flow": 0.98,
+          "mvs": 21.0,
+          "nozzle": 220.0,
+          "firstNozzle": 220.0,
+          "bed": 65.0,
+          "hotendRange": [
+            190.0,
+            240.0
+          ],
+          "fanMin": 60.0,
+          "fanMax": 80.0,
+          "fanOffLayers": 1.0,
+          "vitrification": 45.0
+        },
+        "p1s/0.2": {
+          "name": "Bambu PLA Basic @BBL X1C 0.2 nozzle",
+          "file": "Bambu PLA Basic @BBL X1C 0.2 nozzle.json",
+          "id": "GFA00",
+          "type": "PLA",
+          "density": 1.26,
+          "flow": 0.98,
+          "mvs": 2.0,
+          "nozzle": 220.0,
+          "firstNozzle": 220.0,
+          "bed": 55.0,
+          "hotendRange": [
+            190.0,
+            240.0
+          ],
+          "fanMin": 100.0,
+          "fanMax": 100.0,
+          "fanOffLayers": 1.0,
+          "vitrification": 45.0
+        },
+        "p1s/0.4": {
+          "name": "Bambu PLA Basic @BBL P1S 0.4 nozzle",
+          "file": "Bambu PLA Basic @BBL P1S 0.4 nozzle.json",
+          "id": "GFA00",
+          "type": "PLA",
+          "density": 1.26,
+          "flow": 0.98,
+          "mvs": 21.0,
+          "nozzle": 220.0,
+          "firstNozzle": 220.0,
+          "bed": 55.0,
+          "hotendRange": [
+            190.0,
+            240.0
+          ],
+          "fanMin": 100.0,
+          "fanMax": 100.0,
+          "fanOffLayers": 1.0,
+          "vitrification": 45.0
+        },
+        "p1s/0.6": {
+          "name": "Bambu PLA Basic @BBL P1S 0.6 nozzle",
+          "file": "Bambu PLA Basic @BBL P1S 0.6 nozzle.json",
+          "id": "GFA00",
+          "type": "PLA",
+          "density": 1.26,
+          "flow": 0.98,
+          "mvs": 21.0,
+          "nozzle": 220.0,
+          "firstNozzle": 220.0,
+          "bed": 55.0,
+          "hotendRange": [
+            190.0,
+            240.0
+          ],
+          "fanMin": 100.0,
+          "fanMax": 100.0,
+          "fanOffLayers": 1.0,
+          "vitrification": 45.0
+        },
+        "p1s/0.8": {
+          "name": "Bambu PLA Basic @BBL X1C 0.8 nozzle",
+          "file": "Bambu PLA Basic @BBL X1C 0.8 nozzle.json",
+          "id": "GFA00",
+          "type": "PLA",
+          "density": 1.26,
+          "flow": 0.98,
+          "mvs": 21.0,
+          "nozzle": 220.0,
+          "firstNozzle": 220.0,
+          "bed": 55.0,
+          "hotendRange": [
+            190.0,
+            240.0
+          ],
+          "fanMin": 100.0,
+          "fanMax": 100.0,
+          "fanOffLayers": 1.0,
+          "vitrification": 45.0
+        },
+        "x1e/0.2": {
+          "name": "Bambu PLA Basic @BBL X1C 0.2 nozzle",
+          "file": "Bambu PLA Basic @BBL X1C 0.2 nozzle.json",
+          "id": "GFA00",
+          "type": "PLA",
+          "density": 1.26,
+          "flow": 0.98,
+          "mvs": 2.0,
+          "nozzle": 220.0,
+          "firstNozzle": 220.0,
+          "bed": 55.0,
+          "hotendRange": [
+            190.0,
+            240.0
+          ],
+          "fanMin": 100.0,
+          "fanMax": 100.0,
+          "fanOffLayers": 1.0,
+          "vitrification": 45.0
+        },
+        "x1e/0.4": {
+          "name": "Bambu PLA Basic @BBL X1C",
+          "file": "Bambu PLA Basic @BBL X1C.json",
+          "id": "GFA00",
+          "type": "PLA",
+          "density": 1.26,
+          "flow": 0.98,
+          "mvs": 21.0,
+          "nozzle": 220.0,
+          "firstNozzle": 220.0,
+          "bed": 55.0,
+          "hotendRange": [
+            190.0,
+            240.0
+          ],
+          "fanMin": 100.0,
+          "fanMax": 100.0,
+          "fanOffLayers": 1.0,
+          "vitrification": 45.0
+        },
+        "x1e/0.6": {
+          "name": "Bambu PLA Basic @BBL X1C",
+          "file": "Bambu PLA Basic @BBL X1C.json",
+          "id": "GFA00",
+          "type": "PLA",
+          "density": 1.26,
+          "flow": 0.98,
+          "mvs": 21.0,
+          "nozzle": 220.0,
+          "firstNozzle": 220.0,
+          "bed": 55.0,
+          "hotendRange": [
+            190.0,
+            240.0
+          ],
+          "fanMin": 100.0,
+          "fanMax": 100.0,
+          "fanOffLayers": 1.0,
+          "vitrification": 45.0
+        },
+        "x1e/0.8": {
+          "name": "Bambu PLA Basic @BBL X1C 0.8 nozzle",
+          "file": "Bambu PLA Basic @BBL X1C 0.8 nozzle.json",
+          "id": "GFA00",
+          "type": "PLA",
+          "density": 1.26,
+          "flow": 0.98,
+          "mvs": 21.0,
+          "nozzle": 220.0,
+          "firstNozzle": 220.0,
+          "bed": 55.0,
+          "hotendRange": [
+            190.0,
+            240.0
+          ],
+          "fanMin": 100.0,
+          "fanMax": 100.0,
+          "fanOffLayers": 1.0,
+          "vitrification": 45.0
+        },
+        "x2d/0.2": {
+          "name": "Bambu PLA Basic @BBL X2D 0.2 nozzle",
+          "file": "Bambu PLA Basic @BBL X2D 0.2 nozzle.json",
+          "id": "GFA00",
+          "type": "PLA",
+          "density": 1.26,
+          "flow": 0.98,
+          "mvs": 2.0,
+          "nozzle": 220.0,
+          "firstNozzle": 220.0,
+          "bed": 55.0,
+          "hotendRange": [
+            190.0,
+            240.0
+          ],
+          "fanMin": 100.0,
+          "fanMax": 100.0,
+          "fanOffLayers": 1.0,
+          "vitrification": 45.0
+        },
+        "x2d/0.4": {
+          "name": "Bambu PLA Basic @BBL X2D 0.4 nozzle",
+          "file": "Bambu PLA Basic @BBL X2D 0.4 nozzle.json",
+          "id": "GFA00",
+          "type": "PLA",
+          "density": 1.26,
+          "flow": 0.98,
+          "mvs": 21.0,
+          "nozzle": 220.0,
+          "firstNozzle": 220.0,
+          "bed": 55.0,
+          "hotendRange": [
+            190.0,
+            240.0
+          ],
+          "fanMin": 100.0,
+          "fanMax": 100.0,
+          "fanOffLayers": 1.0,
+          "vitrification": 45.0
+        },
+        "x2d/0.6": {
+          "name": "Bambu PLA Basic @BBL X2D 0.6 nozzle",
+          "file": "Bambu PLA Basic @BBL X2D 0.6 nozzle.json",
+          "id": "GFA00",
+          "type": "PLA",
+          "density": 1.26,
+          "flow": 0.98,
+          "mvs": 21.0,
+          "nozzle": 220.0,
+          "firstNozzle": 220.0,
+          "bed": 55.0,
+          "hotendRange": [
+            190.0,
+            240.0
+          ],
+          "fanMin": 100.0,
+          "fanMax": 100.0,
+          "fanOffLayers": 1.0,
+          "vitrification": 45.0
+        },
+        "x2d/0.8": {
+          "name": "Bambu PLA Basic @BBL X2D 0.8 nozzle",
+          "file": "Bambu PLA Basic @BBL X2D 0.8 nozzle.json",
+          "id": "GFA00",
+          "type": "PLA",
+          "density": 1.26,
+          "flow": 0.98,
+          "mvs": 21.0,
+          "nozzle": 220.0,
+          "firstNozzle": 220.0,
+          "bed": 55.0,
+          "hotendRange": [
+            190.0,
+            240.0
+          ],
+          "fanMin": 100.0,
+          "fanMax": 100.0,
+          "fanOffLayers": 1.0,
+          "vitrification": 45.0
+        },
+        "h2d/0.2": {
+          "name": "Bambu PLA Basic @BBL H2D 0.2 nozzle",
+          "file": "Bambu PLA Basic @BBL H2D 0.2 nozzle.json",
+          "id": "GFA00",
+          "type": "PLA",
+          "density": 1.26,
+          "flow": 0.98,
+          "mvs": 2.0,
+          "nozzle": 220.0,
+          "firstNozzle": 220.0,
+          "bed": 55.0,
+          "hotendRange": [
+            190.0,
+            240.0
+          ],
+          "fanMin": 60.0,
+          "fanMax": 80.0,
+          "fanOffLayers": 1.0,
+          "vitrification": 45.0
+        },
+        "h2d/0.4": {
+          "name": "Bambu PLA Basic @BBL H2D",
+          "file": "Bambu PLA Basic @BBL H2D.json",
+          "id": "GFA00",
+          "type": "PLA",
+          "density": 1.26,
+          "flow": 0.98,
+          "mvs": 25.0,
+          "nozzle": 220.0,
+          "firstNozzle": 220.0,
+          "bed": 55.0,
+          "hotendRange": [
+            190.0,
+            240.0
+          ],
+          "fanMin": 60.0,
+          "fanMax": 80.0,
+          "fanOffLayers": 1.0,
+          "vitrification": 45.0
+        },
+        "h2d/0.6": {
+          "name": "Bambu PLA Basic @BBL H2D 0.6 nozzle",
+          "file": "Bambu PLA Basic @BBL H2D 0.6 nozzle.json",
+          "id": "GFA00",
+          "type": "PLA",
+          "density": 1.26,
+          "flow": 0.98,
+          "mvs": 30.0,
+          "nozzle": 220.0,
+          "firstNozzle": 220.0,
+          "bed": 55.0,
+          "hotendRange": [
+            190.0,
+            240.0
+          ],
+          "fanMin": 60.0,
+          "fanMax": 80.0,
+          "fanOffLayers": 1.0,
+          "vitrification": 45.0
+        },
+        "h2d/0.8": {
+          "name": "Bambu PLA Basic @BBL H2D 0.8 nozzle",
+          "file": "Bambu PLA Basic @BBL H2D 0.8 nozzle.json",
+          "id": "GFA00",
+          "type": "PLA",
+          "density": 1.26,
+          "flow": 0.98,
+          "mvs": 30.0,
+          "nozzle": 220.0,
+          "firstNozzle": 220.0,
+          "bed": 55.0,
+          "hotendRange": [
+            190.0,
+            240.0
+          ],
+          "fanMin": 60.0,
+          "fanMax": 80.0,
+          "fanOffLayers": 1.0,
+          "vitrification": 45.0
+        }
+      }
+    },
+    "pla_matte": {
+      "name": "Bambu PLA Matte",
+      "profiles": {
+        "a1mini/0.2": {
+          "name": "Bambu PLA Matte @BBL A1M 0.2 nozzle",
+          "file": "Bambu PLA Matte @BBL A1M 0.2 nozzle.json",
+          "id": "GFA01",
+          "type": "PLA",
+          "density": 1.32,
+          "flow": 0.98,
+          "mvs": 2.0,
+          "nozzle": 220.0,
+          "firstNozzle": 220.0,
+          "bed": 65.0,
+          "hotendRange": [
+            190.0,
+            240.0
+          ],
+          "fanMin": 60.0,
+          "fanMax": 80.0,
+          "fanOffLayers": 1.0,
+          "vitrification": 45.0
+        },
+        "a1mini/0.4": {
+          "name": "Bambu PLA Matte @BBL A1M",
+          "file": "Bambu PLA Matte @BBL A1M.json",
+          "id": "GFA01",
+          "type": "PLA",
+          "density": 1.32,
+          "flow": 0.98,
+          "mvs": 22.0,
+          "nozzle": 220.0,
+          "firstNozzle": 220.0,
+          "bed": 65.0,
+          "hotendRange": [
+            190.0,
+            240.0
+          ],
+          "fanMin": 60.0,
+          "fanMax": 80.0,
+          "fanOffLayers": 1.0,
+          "vitrification": 45.0
+        },
+        "a1mini/0.6": {
+          "name": "Bambu PLA Matte @BBL A1M",
+          "file": "Bambu PLA Matte @BBL A1M.json",
+          "id": "GFA01",
+          "type": "PLA",
+          "density": 1.32,
+          "flow": 0.98,
+          "mvs": 22.0,
+          "nozzle": 220.0,
+          "firstNozzle": 220.0,
+          "bed": 65.0,
+          "hotendRange": [
+            190.0,
+            240.0
+          ],
+          "fanMin": 60.0,
+          "fanMax": 80.0,
+          "fanOffLayers": 1.0,
+          "vitrification": 45.0
+        },
+        "a1mini/0.8": {
+          "name": "Bambu PLA Matte @BBL A1M",
+          "file": "Bambu PLA Matte @BBL A1M.json",
+          "id": "GFA01",
+          "type": "PLA",
+          "density": 1.32,
+          "flow": 0.98,
+          "mvs": 22.0,
+          "nozzle": 220.0,
+          "firstNozzle": 220.0,
+          "bed": 65.0,
+          "hotendRange": [
+            190.0,
+            240.0
+          ],
+          "fanMin": 60.0,
+          "fanMax": 80.0,
+          "fanOffLayers": 1.0,
+          "vitrification": 45.0
+        },
+        "a1/0.2": {
+          "name": "Bambu PLA Matte @BBL A1 0.2 nozzle",
+          "file": "Bambu PLA Matte @BBL A1 0.2 nozzle.json",
+          "id": "GFA01",
+          "type": "PLA",
+          "density": 1.32,
+          "flow": 0.98,
+          "mvs": 2.0,
+          "nozzle": 220.0,
+          "firstNozzle": 220.0,
+          "bed": 65.0,
+          "hotendRange": [
+            190.0,
+            240.0
+          ],
+          "fanMin": 60.0,
+          "fanMax": 80.0,
+          "fanOffLayers": 1.0,
+          "vitrification": 45.0
+        },
+        "a1/0.4": {
+          "name": "Bambu PLA Matte @BBL A1",
+          "file": "Bambu PLA Matte @BBL A1.json",
+          "id": "GFA01",
+          "type": "PLA",
+          "density": 1.32,
+          "flow": 0.98,
+          "mvs": 22.0,
+          "nozzle": 220.0,
+          "firstNozzle": 220.0,
+          "bed": 65.0,
+          "hotendRange": [
+            190.0,
+            240.0
+          ],
+          "fanMin": 60.0,
+          "fanMax": 80.0,
+          "fanOffLayers": 1.0,
+          "vitrification": 45.0
+        },
+        "a1/0.6": {
+          "name": "Bambu PLA Matte @BBL A1",
+          "file": "Bambu PLA Matte @BBL A1.json",
+          "id": "GFA01",
+          "type": "PLA",
+          "density": 1.32,
+          "flow": 0.98,
+          "mvs": 22.0,
+          "nozzle": 220.0,
+          "firstNozzle": 220.0,
+          "bed": 65.0,
+          "hotendRange": [
+            190.0,
+            240.0
+          ],
+          "fanMin": 60.0,
+          "fanMax": 80.0,
+          "fanOffLayers": 1.0,
+          "vitrification": 45.0
+        },
+        "a1/0.8": {
+          "name": "Bambu PLA Matte @BBL A1",
+          "file": "Bambu PLA Matte @BBL A1.json",
+          "id": "GFA01",
+          "type": "PLA",
+          "density": 1.32,
+          "flow": 0.98,
+          "mvs": 22.0,
+          "nozzle": 220.0,
+          "firstNozzle": 220.0,
+          "bed": 65.0,
+          "hotendRange": [
+            190.0,
+            240.0
+          ],
+          "fanMin": 60.0,
+          "fanMax": 80.0,
+          "fanOffLayers": 1.0,
+          "vitrification": 45.0
+        },
+        "p1s/0.2": {
+          "name": "Bambu PLA Matte @BBL X1C 0.2 nozzle",
+          "file": "Bambu PLA Matte @BBL X1C 0.2 nozzle.json",
+          "id": "GFA01",
+          "type": "PLA",
+          "density": 1.32,
+          "flow": 0.98,
+          "mvs": 2.0,
+          "nozzle": 220.0,
+          "firstNozzle": 220.0,
+          "bed": 55.0,
+          "hotendRange": [
+            190.0,
+            240.0
+          ],
+          "fanMin": 100.0,
+          "fanMax": 100.0,
+          "fanOffLayers": 1.0,
+          "vitrification": 45.0
+        },
+        "p1s/0.4": {
+          "name": "Bambu PLA Matte @BBL P1S 0.4 nozzle",
+          "file": "Bambu PLA Matte @BBL P1S 0.4 nozzle.json",
+          "id": "GFA01",
+          "type": "PLA",
+          "density": 1.32,
+          "flow": 0.98,
+          "mvs": 22.0,
+          "nozzle": 220.0,
+          "firstNozzle": 220.0,
+          "bed": 55.0,
+          "hotendRange": [
+            190.0,
+            240.0
+          ],
+          "fanMin": 100.0,
+          "fanMax": 100.0,
+          "fanOffLayers": 1.0,
+          "vitrification": 45.0
+        },
+        "p1s/0.6": {
+          "name": "Bambu PLA Matte @BBL P1S 0.6 nozzle",
+          "file": "Bambu PLA Matte @BBL P1S 0.6 nozzle.json",
+          "id": "GFA01",
+          "type": "PLA",
+          "density": 1.32,
+          "flow": 0.98,
+          "mvs": 22.0,
+          "nozzle": 220.0,
+          "firstNozzle": 220.0,
+          "bed": 55.0,
+          "hotendRange": [
+            190.0,
+            240.0
+          ],
+          "fanMin": 100.0,
+          "fanMax": 100.0,
+          "fanOffLayers": 1.0,
+          "vitrification": 45.0
+        },
+        "p1s/0.8": {
+          "name": "Bambu PLA Matte @BBL X1C 0.8 nozzle",
+          "file": "Bambu PLA Matte @BBL X1C 0.8 nozzle.json",
+          "id": "GFA01",
+          "type": "PLA",
+          "density": 1.32,
+          "flow": 0.98,
+          "mvs": 22.0,
+          "nozzle": 220.0,
+          "firstNozzle": 220.0,
+          "bed": 55.0,
+          "hotendRange": [
+            190.0,
+            240.0
+          ],
+          "fanMin": 100.0,
+          "fanMax": 100.0,
+          "fanOffLayers": 1.0,
+          "vitrification": 45.0
+        },
+        "x1e/0.2": {
+          "name": "Bambu PLA Matte @BBL X1C 0.2 nozzle",
+          "file": "Bambu PLA Matte @BBL X1C 0.2 nozzle.json",
+          "id": "GFA01",
+          "type": "PLA",
+          "density": 1.32,
+          "flow": 0.98,
+          "mvs": 2.0,
+          "nozzle": 220.0,
+          "firstNozzle": 220.0,
+          "bed": 55.0,
+          "hotendRange": [
+            190.0,
+            240.0
+          ],
+          "fanMin": 100.0,
+          "fanMax": 100.0,
+          "fanOffLayers": 1.0,
+          "vitrification": 45.0
+        },
+        "x1e/0.4": {
+          "name": "Bambu PLA Matte @BBL X1C",
+          "file": "Bambu PLA Matte @BBL X1C.json",
+          "id": "GFA01",
+          "type": "PLA",
+          "density": 1.32,
+          "flow": 0.98,
+          "mvs": 22.0,
+          "nozzle": 220.0,
+          "firstNozzle": 220.0,
+          "bed": 55.0,
+          "hotendRange": [
+            190.0,
+            240.0
+          ],
+          "fanMin": 100.0,
+          "fanMax": 100.0,
+          "fanOffLayers": 1.0,
+          "vitrification": 45.0
+        },
+        "x1e/0.6": {
+          "name": "Bambu PLA Matte @BBL X1C",
+          "file": "Bambu PLA Matte @BBL X1C.json",
+          "id": "GFA01",
+          "type": "PLA",
+          "density": 1.32,
+          "flow": 0.98,
+          "mvs": 22.0,
+          "nozzle": 220.0,
+          "firstNozzle": 220.0,
+          "bed": 55.0,
+          "hotendRange": [
+            190.0,
+            240.0
+          ],
+          "fanMin": 100.0,
+          "fanMax": 100.0,
+          "fanOffLayers": 1.0,
+          "vitrification": 45.0
+        },
+        "x1e/0.8": {
+          "name": "Bambu PLA Matte @BBL X1C 0.8 nozzle",
+          "file": "Bambu PLA Matte @BBL X1C 0.8 nozzle.json",
+          "id": "GFA01",
+          "type": "PLA",
+          "density": 1.32,
+          "flow": 0.98,
+          "mvs": 22.0,
+          "nozzle": 220.0,
+          "firstNozzle": 220.0,
+          "bed": 55.0,
+          "hotendRange": [
+            190.0,
+            240.0
+          ],
+          "fanMin": 100.0,
+          "fanMax": 100.0,
+          "fanOffLayers": 1.0,
+          "vitrification": 45.0
+        },
+        "x2d/0.2": {
+          "name": "Bambu PLA Matte @BBL X2D 0.2 nozzle",
+          "file": "Bambu PLA Matte @BBL X2D 0.2 nozzle.json",
+          "id": "GFA01",
+          "type": "PLA",
+          "density": 1.32,
+          "flow": 0.98,
+          "mvs": 2.0,
+          "nozzle": 220.0,
+          "firstNozzle": 220.0,
+          "bed": 55.0,
+          "hotendRange": [
+            190.0,
+            240.0
+          ],
+          "fanMin": 100.0,
+          "fanMax": 100.0,
+          "fanOffLayers": 1.0,
+          "vitrification": 45.0
+        },
+        "x2d/0.4": {
+          "name": "Bambu PLA Matte @BBL X2D 0.4 nozzle",
+          "file": "Bambu PLA Matte @BBL X2D 0.4 nozzle.json",
+          "id": "GFA01",
+          "type": "PLA",
+          "density": 1.32,
+          "flow": 1.006,
+          "mvs": 22.0,
+          "nozzle": 220.0,
+          "firstNozzle": 220.0,
+          "bed": 55.0,
+          "hotendRange": [
+            190.0,
+            240.0
+          ],
+          "fanMin": 100.0,
+          "fanMax": 100.0,
+          "fanOffLayers": 1.0,
+          "vitrification": 45.0
+        },
+        "x2d/0.6": {
+          "name": "Bambu PLA Matte @BBL X2D",
+          "file": "Bambu PLA Matte @BBL X2D.json",
+          "id": "GFA01",
+          "type": "PLA",
+          "density": 1.32,
+          "flow": 0.98,
+          "mvs": 22.0,
+          "nozzle": 220.0,
+          "firstNozzle": 220.0,
+          "bed": 55.0,
+          "hotendRange": [
+            190.0,
+            240.0
+          ],
+          "fanMin": 100.0,
+          "fanMax": 100.0,
+          "fanOffLayers": 1.0,
+          "vitrification": 45.0
+        },
+        "x2d/0.8": {
+          "name": "Bambu PLA Matte @BBL X2D 0.8 nozzle",
+          "file": "Bambu PLA Matte @BBL X2D 0.8 nozzle.json",
+          "id": "GFA01",
+          "type": "PLA",
+          "density": 1.32,
+          "flow": 0.98,
+          "mvs": 22.0,
+          "nozzle": 220.0,
+          "firstNozzle": 220.0,
+          "bed": 55.0,
+          "hotendRange": [
+            190.0,
+            240.0
+          ],
+          "fanMin": 100.0,
+          "fanMax": 100.0,
+          "fanOffLayers": 1.0,
+          "vitrification": 45.0
+        },
+        "h2d/0.2": {
+          "name": "Bambu PLA Matte @BBL H2D 0.2 nozzle",
+          "file": "Bambu PLA Matte @BBL H2D 0.2 nozzle.json",
+          "id": "GFA01",
+          "type": "PLA",
+          "density": 1.32,
+          "flow": 0.98,
+          "mvs": 2.0,
+          "nozzle": 220.0,
+          "firstNozzle": 220.0,
+          "bed": 55.0,
+          "hotendRange": [
+            190.0,
+            240.0
+          ],
+          "fanMin": 60.0,
+          "fanMax": 80.0,
+          "fanOffLayers": 1.0,
+          "vitrification": 45.0
+        },
+        "h2d/0.4": {
+          "name": "Bambu PLA Matte @BBL H2D",
+          "file": "Bambu PLA Matte @BBL H2D.json",
+          "id": "GFA01",
+          "type": "PLA",
+          "density": 1.32,
+          "flow": 0.98,
+          "mvs": 25.0,
+          "nozzle": 220.0,
+          "firstNozzle": 220.0,
+          "bed": 55.0,
+          "hotendRange": [
+            190.0,
+            240.0
+          ],
+          "fanMin": 60.0,
+          "fanMax": 80.0,
+          "fanOffLayers": 1.0,
+          "vitrification": 45.0
+        },
+        "h2d/0.6": {
+          "name": "Bambu PLA Matte @BBL H2D 0.6 nozzle",
+          "file": "Bambu PLA Matte @BBL H2D 0.6 nozzle.json",
+          "id": "GFA01",
+          "type": "PLA",
+          "density": 1.32,
+          "flow": 0.98,
+          "mvs": 30.0,
+          "nozzle": 220.0,
+          "firstNozzle": 220.0,
+          "bed": 55.0,
+          "hotendRange": [
+            190.0,
+            240.0
+          ],
+          "fanMin": 60.0,
+          "fanMax": 80.0,
+          "fanOffLayers": 1.0,
+          "vitrification": 45.0
+        },
+        "h2d/0.8": {
+          "name": "Bambu PLA Matte @BBL H2D 0.8 nozzle",
+          "file": "Bambu PLA Matte @BBL H2D 0.8 nozzle.json",
+          "id": "GFA01",
+          "type": "PLA",
+          "density": 1.32,
+          "flow": 0.98,
+          "mvs": 30.0,
+          "nozzle": 220.0,
+          "firstNozzle": 220.0,
+          "bed": 55.0,
+          "hotendRange": [
+            190.0,
+            240.0
+          ],
+          "fanMin": 60.0,
+          "fanMax": 80.0,
+          "fanOffLayers": 1.0,
+          "vitrification": 45.0
+        }
+      }
+    },
+    "pla_glow": {
+      "name": "Bambu PLA Glow",
+      "profiles": {
+        "a1mini/0.2": {
+          "name": "Bambu PLA Glow @BBL A1M 0.2 nozzle",
+          "file": "Bambu PLA Glow @BBL A1M 0.2 nozzle.json",
+          "id": "GFA12",
+          "type": "PLA",
+          "density": 1.26,
+          "flow": 0.98,
+          "mvs": 1.0,
+          "nozzle": 220.0,
+          "firstNozzle": 220.0,
+          "bed": 65.0,
+          "hotendRange": [
+            190.0,
+            240.0
+          ],
+          "fanMin": 50.0,
+          "fanMax": 100.0,
+          "fanOffLayers": 1.0,
+          "vitrification": 45.0
+        },
+        "a1mini/0.4": {
+          "name": "Bambu PLA Glow @BBL A1M",
+          "file": "Bambu PLA Glow @BBL A1M.json",
+          "id": "GFA12",
+          "type": "PLA",
+          "density": 1.26,
+          "flow": 0.98,
+          "mvs": 18.0,
+          "nozzle": 220.0,
+          "firstNozzle": 220.0,
+          "bed": 65.0,
+          "hotendRange": [
+            190.0,
+            240.0
+          ],
+          "fanMin": 50.0,
+          "fanMax": 100.0,
+          "fanOffLayers": 1.0,
+          "vitrification": 45.0
+        },
+        "a1mini/0.6": {
+          "name": "Bambu PLA Glow @BBL A1M",
+          "file": "Bambu PLA Glow @BBL A1M.json",
+          "id": "GFA12",
+          "type": "PLA",
+          "density": 1.26,
+          "flow": 0.98,
+          "mvs": 18.0,
+          "nozzle": 220.0,
+          "firstNozzle": 220.0,
+          "bed": 65.0,
+          "hotendRange": [
+            190.0,
+            240.0
+          ],
+          "fanMin": 50.0,
+          "fanMax": 100.0,
+          "fanOffLayers": 1.0,
+          "vitrification": 45.0
+        },
+        "a1mini/0.8": {
+          "name": "Bambu PLA Glow @BBL A1M",
+          "file": "Bambu PLA Glow @BBL A1M.json",
+          "id": "GFA12",
+          "type": "PLA",
+          "density": 1.26,
+          "flow": 0.98,
+          "mvs": 18.0,
+          "nozzle": 220.0,
+          "firstNozzle": 220.0,
+          "bed": 65.0,
+          "hotendRange": [
+            190.0,
+            240.0
+          ],
+          "fanMin": 50.0,
+          "fanMax": 100.0,
+          "fanOffLayers": 1.0,
+          "vitrification": 45.0
+        },
+        "a1/0.2": {
+          "name": "Bambu PLA Glow @BBL A1 0.2 nozzle",
+          "file": "Bambu PLA Glow @BBL A1 0.2 nozzle.json",
+          "id": "GFA12",
+          "type": "PLA",
+          "density": 1.26,
+          "flow": 0.98,
+          "mvs": 1.0,
+          "nozzle": 220.0,
+          "firstNozzle": 220.0,
+          "bed": 65.0,
+          "hotendRange": [
+            190.0,
+            240.0
+          ],
+          "fanMin": 50.0,
+          "fanMax": 100.0,
+          "fanOffLayers": 1.0,
+          "vitrification": 45.0
+        },
+        "a1/0.4": {
+          "name": "Bambu PLA Glow @BBL A1",
+          "file": "Bambu PLA Glow @BBL A1.json",
+          "id": "GFA12",
+          "type": "PLA",
+          "density": 1.26,
+          "flow": 0.98,
+          "mvs": 18.0,
+          "nozzle": 220.0,
+          "firstNozzle": 220.0,
+          "bed": 65.0,
+          "hotendRange": [
+            190.0,
+            240.0
+          ],
+          "fanMin": 50.0,
+          "fanMax": 100.0,
+          "fanOffLayers": 1.0,
+          "vitrification": 45.0
+        },
+        "a1/0.6": {
+          "name": "Bambu PLA Glow @BBL A1",
+          "file": "Bambu PLA Glow @BBL A1.json",
+          "id": "GFA12",
+          "type": "PLA",
+          "density": 1.26,
+          "flow": 0.98,
+          "mvs": 18.0,
+          "nozzle": 220.0,
+          "firstNozzle": 220.0,
+          "bed": 65.0,
+          "hotendRange": [
+            190.0,
+            240.0
+          ],
+          "fanMin": 50.0,
+          "fanMax": 100.0,
+          "fanOffLayers": 1.0,
+          "vitrification": 45.0
+        },
+        "a1/0.8": {
+          "name": "Bambu PLA Glow @BBL A1",
+          "file": "Bambu PLA Glow @BBL A1.json",
+          "id": "GFA12",
+          "type": "PLA",
+          "density": 1.26,
+          "flow": 0.98,
+          "mvs": 18.0,
+          "nozzle": 220.0,
+          "firstNozzle": 220.0,
+          "bed": 65.0,
+          "hotendRange": [
+            190.0,
+            240.0
+          ],
+          "fanMin": 50.0,
+          "fanMax": 100.0,
+          "fanOffLayers": 1.0,
+          "vitrification": 45.0
+        },
+        "p1s/0.2": {
+          "name": "Bambu PLA Glow @BBL X1C 0.2 nozzle",
+          "file": "Bambu PLA Glow @BBL X1C 0.2 nozzle.json",
+          "id": "GFA12",
+          "type": "PLA",
+          "density": 1.26,
+          "flow": 0.98,
+          "mvs": 1.0,
+          "nozzle": 220.0,
+          "firstNozzle": 220.0,
+          "bed": 55.0,
+          "hotendRange": [
+            190.0,
+            240.0
+          ],
+          "fanMin": 100.0,
+          "fanMax": 100.0,
+          "fanOffLayers": 1.0,
+          "vitrification": 45.0
+        },
+        "p1s/0.4": {
+          "name": "Bambu PLA Glow @BBL X1C",
+          "file": "Bambu PLA Glow @BBL X1C.json",
+          "id": "GFA12",
+          "type": "PLA",
+          "density": 1.26,
+          "flow": 0.98,
+          "mvs": 18.0,
+          "nozzle": 220.0,
+          "firstNozzle": 220.0,
+          "bed": 55.0,
+          "hotendRange": [
+            190.0,
+            240.0
+          ],
+          "fanMin": 100.0,
+          "fanMax": 100.0,
+          "fanOffLayers": 1.0,
+          "vitrification": 45.0
+        },
+        "p1s/0.6": {
+          "name": "Bambu PLA Glow @BBL X1C 0.6 nozzle",
+          "file": "Bambu PLA Glow @BBL X1C 0.6 nozzle.json",
+          "id": "GFA12",
+          "type": "PLA",
+          "density": 1.26,
+          "flow": 0.98,
+          "mvs": 18.0,
+          "nozzle": 220.0,
+          "firstNozzle": 220.0,
+          "bed": 55.0,
+          "hotendRange": [
+            190.0,
+            240.0
+          ],
+          "fanMin": 100.0,
+          "fanMax": 100.0,
+          "fanOffLayers": 1.0,
+          "vitrification": 45.0
+        },
+        "p1s/0.8": {
+          "name": "Bambu PLA Glow @BBL X1C",
+          "file": "Bambu PLA Glow @BBL X1C.json",
+          "id": "GFA12",
+          "type": "PLA",
+          "density": 1.26,
+          "flow": 0.98,
+          "mvs": 18.0,
+          "nozzle": 220.0,
+          "firstNozzle": 220.0,
+          "bed": 55.0,
+          "hotendRange": [
+            190.0,
+            240.0
+          ],
+          "fanMin": 100.0,
+          "fanMax": 100.0,
+          "fanOffLayers": 1.0,
+          "vitrification": 45.0
+        },
+        "x1e/0.2": {
+          "name": "Bambu PLA Glow @BBL X1E 0.2 nozzle",
+          "file": "Bambu PLA Glow @BBL X1E 0.2 nozzle.json",
+          "id": "GFA12",
+          "type": "PLA",
+          "density": 1.26,
+          "flow": 0.98,
+          "mvs": 1.0,
+          "nozzle": 220.0,
+          "firstNozzle": 220.0,
+          "bed": 55.0,
+          "hotendRange": [
+            190.0,
+            240.0
+          ],
+          "fanMin": 100.0,
+          "fanMax": 100.0,
+          "fanOffLayers": 1.0,
+          "vitrification": 45.0
+        },
+        "x1e/0.4": {
+          "name": "Bambu PLA Glow @BBL X1E",
+          "file": "Bambu PLA Glow @BBL X1E.json",
+          "id": "GFA12",
+          "type": "PLA",
+          "density": 1.26,
+          "flow": 0.98,
+          "mvs": 18.0,
+          "nozzle": 220.0,
+          "firstNozzle": 220.0,
+          "bed": 55.0,
+          "hotendRange": [
+            190.0,
+            240.0
+          ],
+          "fanMin": 100.0,
+          "fanMax": 100.0,
+          "fanOffLayers": 1.0,
+          "vitrification": 45.0
+        },
+        "x1e/0.6": {
+          "name": "Bambu PLA Glow @BBL X1E",
+          "file": "Bambu PLA Glow @BBL X1E.json",
+          "id": "GFA12",
+          "type": "PLA",
+          "density": 1.26,
+          "flow": 0.98,
+          "mvs": 18.0,
+          "nozzle": 220.0,
+          "firstNozzle": 220.0,
+          "bed": 55.0,
+          "hotendRange": [
+            190.0,
+            240.0
+          ],
+          "fanMin": 100.0,
+          "fanMax": 100.0,
+          "fanOffLayers": 1.0,
+          "vitrification": 45.0
+        },
+        "x1e/0.8": {
+          "name": "Bambu PLA Glow @BBL X1E",
+          "file": "Bambu PLA Glow @BBL X1E.json",
+          "id": "GFA12",
+          "type": "PLA",
+          "density": 1.26,
+          "flow": 0.98,
+          "mvs": 18.0,
+          "nozzle": 220.0,
+          "firstNozzle": 220.0,
+          "bed": 55.0,
+          "hotendRange": [
+            190.0,
+            240.0
+          ],
+          "fanMin": 100.0,
+          "fanMax": 100.0,
+          "fanOffLayers": 1.0,
+          "vitrification": 45.0
+        },
+        "x2d/0.2": {
+          "name": "Bambu PLA Glow @BBL X2D 0.2 nozzle",
+          "file": "Bambu PLA Glow @BBL X2D 0.2 nozzle.json",
+          "id": "GFA12",
+          "type": "PLA",
+          "density": 1.26,
+          "flow": 0.98,
+          "mvs": 2.0,
+          "nozzle": 220.0,
+          "firstNozzle": 220.0,
+          "bed": 55.0,
+          "hotendRange": [
+            190.0,
+            240.0
+          ],
+          "fanMin": 100.0,
+          "fanMax": 100.0,
+          "fanOffLayers": 1.0,
+          "vitrification": 45.0
+        },
+        "x2d/0.4": {
+          "name": "Bambu PLA Glow @BBL X2D 0.4 nozzle",
+          "file": "Bambu PLA Glow @BBL X2D 0.4 nozzle.json",
+          "id": "GFA12",
+          "type": "PLA",
+          "density": 1.26,
+          "flow": 0.98,
+          "mvs": 18.0,
+          "nozzle": 220.0,
+          "firstNozzle": 220.0,
+          "bed": 55.0,
+          "hotendRange": [
+            190.0,
+            240.0
+          ],
+          "fanMin": 100.0,
+          "fanMax": 100.0,
+          "fanOffLayers": 1.0,
+          "vitrification": 45.0
+        },
+        "x2d/0.6": {
+          "name": "Bambu PLA Glow @BBL X2D",
+          "file": "Bambu PLA Glow @BBL X2D.json",
+          "id": "GFA12",
+          "type": "PLA",
+          "density": 1.26,
+          "flow": 0.98,
+          "mvs": 18.0,
+          "nozzle": 220.0,
+          "firstNozzle": 220.0,
+          "bed": 55.0,
+          "hotendRange": [
+            190.0,
+            240.0
+          ],
+          "fanMin": 100.0,
+          "fanMax": 100.0,
+          "fanOffLayers": 1.0,
+          "vitrification": 45.0
+        },
+        "x2d/0.8": {
+          "name": "Bambu PLA Glow @BBL X2D",
+          "file": "Bambu PLA Glow @BBL X2D.json",
+          "id": "GFA12",
+          "type": "PLA",
+          "density": 1.26,
+          "flow": 0.98,
+          "mvs": 18.0,
+          "nozzle": 220.0,
+          "firstNozzle": 220.0,
+          "bed": 55.0,
+          "hotendRange": [
+            190.0,
+            240.0
+          ],
+          "fanMin": 100.0,
+          "fanMax": 100.0,
+          "fanOffLayers": 1.0,
+          "vitrification": 45.0
+        },
+        "h2d/0.4": {
+          "name": "Bambu PLA Glow @BBL H2D",
+          "file": "Bambu PLA Glow @BBL H2D.json",
+          "id": "GFA12",
+          "type": "PLA",
+          "density": 1.26,
+          "flow": 0.98,
+          "mvs": 18.0,
+          "nozzle": 220.0,
+          "firstNozzle": 220.0,
+          "bed": 55.0,
+          "hotendRange": [
+            190.0,
+            240.0
+          ],
+          "fanMin": 100.0,
+          "fanMax": 100.0,
+          "fanOffLayers": 1.0,
+          "vitrification": 45.0
+        },
+        "h2d/0.6": {
+          "name": "Bambu PLA Glow @BBL H2D",
+          "file": "Bambu PLA Glow @BBL H2D.json",
+          "id": "GFA12",
+          "type": "PLA",
+          "density": 1.26,
+          "flow": 0.98,
+          "mvs": 18.0,
+          "nozzle": 220.0,
+          "firstNozzle": 220.0,
+          "bed": 55.0,
+          "hotendRange": [
+            190.0,
+            240.0
+          ],
+          "fanMin": 100.0,
+          "fanMax": 100.0,
+          "fanOffLayers": 1.0,
+          "vitrification": 45.0
+        },
+        "h2d/0.8": {
+          "name": "Bambu PLA Glow @BBL H2D",
+          "file": "Bambu PLA Glow @BBL H2D.json",
+          "id": "GFA12",
+          "type": "PLA",
+          "density": 1.26,
+          "flow": 0.98,
+          "mvs": 18.0,
+          "nozzle": 220.0,
+          "firstNozzle": 220.0,
+          "bed": 55.0,
+          "hotendRange": [
+            190.0,
+            240.0
+          ],
+          "fanMin": 100.0,
+          "fanMax": 100.0,
+          "fanOffLayers": 1.0,
+          "vitrification": 45.0
+        }
+      }
+    },
+    "tpu_ams": {
+      "name": "Bambu TPU for AMS",
+      "profiles": {
+        "a1mini/0.4": {
+          "name": "Bambu TPU for AMS @BBL A1M",
+          "file": "Bambu TPU for AMS @BBL A1M.json",
+          "id": "GFU02",
+          "type": "TPU-AMS",
+          "density": 1.26,
+          "flow": 0.97,
+          "mvs": 18.0,
+          "nozzle": 230.0,
+          "firstNozzle": 230.0,
+          "bed": 35.0,
+          "hotendRange": [
+            220.0,
+            240.0
+          ],
+          "fanMin": 20.0,
+          "fanMax": 40.0,
+          "fanOffLayers": 1.0,
+          "vitrification": 30.0
+        },
+        "a1mini/0.6": {
+          "name": "Bambu TPU for AMS @BBL A1M",
+          "file": "Bambu TPU for AMS @BBL A1M.json",
+          "id": "GFU02",
+          "type": "TPU-AMS",
+          "density": 1.26,
+          "flow": 0.97,
+          "mvs": 18.0,
+          "nozzle": 230.0,
+          "firstNozzle": 230.0,
+          "bed": 35.0,
+          "hotendRange": [
+            220.0,
+            240.0
+          ],
+          "fanMin": 20.0,
+          "fanMax": 40.0,
+          "fanOffLayers": 1.0,
+          "vitrification": 30.0
+        },
+        "a1mini/0.8": {
+          "name": "Bambu TPU for AMS @BBL A1M",
+          "file": "Bambu TPU for AMS @BBL A1M.json",
+          "id": "GFU02",
+          "type": "TPU-AMS",
+          "density": 1.26,
+          "flow": 0.97,
+          "mvs": 18.0,
+          "nozzle": 230.0,
+          "firstNozzle": 230.0,
+          "bed": 35.0,
+          "hotendRange": [
+            220.0,
+            240.0
+          ],
+          "fanMin": 20.0,
+          "fanMax": 40.0,
+          "fanOffLayers": 1.0,
+          "vitrification": 30.0
+        },
+        "a1/0.4": {
+          "name": "Bambu TPU for AMS @BBL A1",
+          "file": "Bambu TPU for AMS @BBL A1.json",
+          "id": "GFU02",
+          "type": "TPU-AMS",
+          "density": 1.26,
+          "flow": 0.97,
+          "mvs": 18.0,
+          "nozzle": 230.0,
+          "firstNozzle": 230.0,
+          "bed": 35.0,
+          "hotendRange": [
+            220.0,
+            240.0
+          ],
+          "fanMin": 20.0,
+          "fanMax": 40.0,
+          "fanOffLayers": 1.0,
+          "vitrification": 30.0
+        },
+        "a1/0.6": {
+          "name": "Bambu TPU for AMS @BBL A1",
+          "file": "Bambu TPU for AMS @BBL A1.json",
+          "id": "GFU02",
+          "type": "TPU-AMS",
+          "density": 1.26,
+          "flow": 0.97,
+          "mvs": 18.0,
+          "nozzle": 230.0,
+          "firstNozzle": 230.0,
+          "bed": 35.0,
+          "hotendRange": [
+            220.0,
+            240.0
+          ],
+          "fanMin": 20.0,
+          "fanMax": 40.0,
+          "fanOffLayers": 1.0,
+          "vitrification": 30.0
+        },
+        "a1/0.8": {
+          "name": "Bambu TPU for AMS @BBL A1",
+          "file": "Bambu TPU for AMS @BBL A1.json",
+          "id": "GFU02",
+          "type": "TPU-AMS",
+          "density": 1.26,
+          "flow": 0.97,
+          "mvs": 18.0,
+          "nozzle": 230.0,
+          "firstNozzle": 230.0,
+          "bed": 35.0,
+          "hotendRange": [
+            220.0,
+            240.0
+          ],
+          "fanMin": 20.0,
+          "fanMax": 40.0,
+          "fanOffLayers": 1.0,
+          "vitrification": 30.0
+        },
+        "p1s/0.4": {
+          "name": "Bambu TPU for AMS @BBL X1C",
+          "file": "Bambu TPU for AMS @BBL X1C.json",
+          "id": "GFU02",
+          "type": "TPU-AMS",
+          "density": 1.26,
+          "flow": 0.97,
+          "mvs": 18.0,
+          "nozzle": 230.0,
+          "firstNozzle": 230.0,
+          "bed": 35.0,
+          "hotendRange": [
+            220.0,
+            240.0
+          ],
+          "fanMin": 20.0,
+          "fanMax": 40.0,
+          "fanOffLayers": 1.0,
+          "vitrification": 30.0
+        },
+        "p1s/0.6": {
+          "name": "Bambu TPU for AMS @BBL X1C 0.6 nozzle",
+          "file": "Bambu TPU for AMS @BBL X1C 0.6 nozzle.json",
+          "id": "GFU02",
+          "type": "TPU-AMS",
+          "density": 1.26,
+          "flow": 0.97,
+          "mvs": 18.0,
+          "nozzle": 230.0,
+          "firstNozzle": 230.0,
+          "bed": 35.0,
+          "hotendRange": [
+            220.0,
+            240.0
+          ],
+          "fanMin": 20.0,
+          "fanMax": 40.0,
+          "fanOffLayers": 1.0,
+          "vitrification": 30.0
+        },
+        "p1s/0.8": {
+          "name": "Bambu TPU for AMS @BBL X1C",
+          "file": "Bambu TPU for AMS @BBL X1C.json",
+          "id": "GFU02",
+          "type": "TPU-AMS",
+          "density": 1.26,
+          "flow": 0.97,
+          "mvs": 18.0,
+          "nozzle": 230.0,
+          "firstNozzle": 230.0,
+          "bed": 35.0,
+          "hotendRange": [
+            220.0,
+            240.0
+          ],
+          "fanMin": 20.0,
+          "fanMax": 40.0,
+          "fanOffLayers": 1.0,
+          "vitrification": 30.0
+        },
+        "x1e/0.4": {
+          "name": "Bambu TPU for AMS @BBL X1C",
+          "file": "Bambu TPU for AMS @BBL X1C.json",
+          "id": "GFU02",
+          "type": "TPU-AMS",
+          "density": 1.26,
+          "flow": 0.97,
+          "mvs": 18.0,
+          "nozzle": 230.0,
+          "firstNozzle": 230.0,
+          "bed": 35.0,
+          "hotendRange": [
+            220.0,
+            240.0
+          ],
+          "fanMin": 20.0,
+          "fanMax": 40.0,
+          "fanOffLayers": 1.0,
+          "vitrification": 30.0
+        },
+        "x1e/0.6": {
+          "name": "Bambu TPU for AMS @BBL X1C",
+          "file": "Bambu TPU for AMS @BBL X1C.json",
+          "id": "GFU02",
+          "type": "TPU-AMS",
+          "density": 1.26,
+          "flow": 0.97,
+          "mvs": 18.0,
+          "nozzle": 230.0,
+          "firstNozzle": 230.0,
+          "bed": 35.0,
+          "hotendRange": [
+            220.0,
+            240.0
+          ],
+          "fanMin": 20.0,
+          "fanMax": 40.0,
+          "fanOffLayers": 1.0,
+          "vitrification": 30.0
+        },
+        "x1e/0.8": {
+          "name": "Bambu TPU for AMS @BBL X1C",
+          "file": "Bambu TPU for AMS @BBL X1C.json",
+          "id": "GFU02",
+          "type": "TPU-AMS",
+          "density": 1.26,
+          "flow": 0.97,
+          "mvs": 18.0,
+          "nozzle": 230.0,
+          "firstNozzle": 230.0,
+          "bed": 35.0,
+          "hotendRange": [
+            220.0,
+            240.0
+          ],
+          "fanMin": 20.0,
+          "fanMax": 40.0,
+          "fanOffLayers": 1.0,
+          "vitrification": 30.0
+        },
+        "x2d/0.4": {
+          "name": "Bambu TPU for AMS @BBL X2D 0.4 nozzle",
+          "file": "Bambu TPU for AMS @BBL X2D 0.4 nozzle.json",
+          "id": "GFU02",
+          "type": "TPU-AMS",
+          "density": 1.26,
+          "flow": 0.97,
+          "mvs": 18.0,
+          "nozzle": 230.0,
+          "firstNozzle": 230.0,
+          "bed": 35.0,
+          "hotendRange": [
+            220.0,
+            240.0
+          ],
+          "fanMin": 20.0,
+          "fanMax": 40.0,
+          "fanOffLayers": 1.0,
+          "vitrification": 30.0
+        },
+        "x2d/0.6": {
+          "name": "Bambu TPU for AMS @BBL X2D",
+          "file": "Bambu TPU for AMS @BBL X2D.json",
+          "id": "GFU02",
+          "type": "TPU-AMS",
+          "density": 1.26,
+          "flow": 0.97,
+          "mvs": 18.0,
+          "nozzle": 230.0,
+          "firstNozzle": 230.0,
+          "bed": 35.0,
+          "hotendRange": [
+            220.0,
+            240.0
+          ],
+          "fanMin": 20.0,
+          "fanMax": 40.0,
+          "fanOffLayers": 1.0,
+          "vitrification": 30.0
+        },
+        "x2d/0.8": {
+          "name": "Bambu TPU for AMS @BBL X2D 0.8 nozzle",
+          "file": "Bambu TPU for AMS @BBL X2D 0.8 nozzle.json",
+          "id": "GFU02",
+          "type": "TPU-AMS",
+          "density": 1.26,
+          "flow": 0.97,
+          "mvs": 18.0,
+          "nozzle": 230.0,
+          "firstNozzle": 230.0,
+          "bed": 35.0,
+          "hotendRange": [
+            220.0,
+            240.0
+          ],
+          "fanMin": 20.0,
+          "fanMax": 40.0,
+          "fanOffLayers": 1.0,
+          "vitrification": 30.0
+        },
+        "h2d/0.4": {
+          "name": "Bambu TPU for AMS @BBL H2D",
+          "file": "Bambu TPU for AMS @BBL H2D.json",
+          "id": "GFU02",
+          "type": "TPU-AMS",
+          "density": 1.26,
+          "flow": 0.97,
+          "mvs": 12.0,
+          "nozzle": 230.0,
+          "firstNozzle": 230.0,
+          "bed": 35.0,
+          "hotendRange": [
+            220.0,
+            240.0
+          ],
+          "fanMin": 20.0,
+          "fanMax": 40.0,
+          "fanOffLayers": 1.0,
+          "vitrification": 30.0
+        },
+        "h2d/0.6": {
+          "name": "Bambu TPU for AMS @BBL H2D 0.6 nozzle",
+          "file": "Bambu TPU for AMS @BBL H2D 0.6 nozzle.json",
+          "id": "GFU02",
+          "type": "TPU-AMS",
+          "density": 1.26,
+          "flow": 0.97,
+          "mvs": 12.0,
+          "nozzle": 230.0,
+          "firstNozzle": 230.0,
+          "bed": 35.0,
+          "hotendRange": [
+            220.0,
+            240.0
+          ],
+          "fanMin": 20.0,
+          "fanMax": 40.0,
+          "fanOffLayers": 1.0,
+          "vitrification": 30.0
+        },
+        "h2d/0.8": {
+          "name": "Bambu TPU for AMS @BBL H2D 0.8 nozzle",
+          "file": "Bambu TPU for AMS @BBL H2D 0.8 nozzle.json",
+          "id": "GFU02",
+          "type": "TPU-AMS",
+          "density": 1.26,
+          "flow": 0.97,
+          "mvs": 12.0,
+          "nozzle": 230.0,
+          "firstNozzle": 230.0,
+          "bed": 35.0,
+          "hotendRange": [
+            220.0,
+            240.0
+          ],
+          "fanMin": 20.0,
+          "fanMax": 40.0,
+          "fanOffLayers": 1.0,
+          "vitrification": 30.0
+        }
+      }
+    }
+  },
+  "machines": {
+    "a1mini": {
+      "modelId": "N1",
+      "file": "Bambu Lab A1 mini 0.4 nozzle.json",
+      "physical_extruder_map": [
+        "0"
+      ],
+      "extruder_printable_area": [],
+      "extruder_printable_height": [],
+      "extruder_offset": [
+        "0x0"
+      ],
+      "extruder_height_gap": "0",
+      "extruder_type": [
+        "Direct Drive"
+      ],
+      "machine_max_speed_x": [
+        "500",
+        "200"
+      ],
+      "machine_max_speed_y": [
+        "500",
+        "200"
+      ],
+      "machine_max_speed_z": [
+        "30",
+        "30"
+      ],
+      "machine_max_speed_e": [
+        "30",
+        "30"
+      ],
+      "machine_max_acceleration_extruding": [
+        "20000",
+        "20000"
+      ],
+      "machine_max_acceleration_travel": [
+        "9000",
+        "9000"
+      ],
+      "machine_max_acceleration_z": [
+        "1500",
+        "1500"
+      ],
+      "machine_max_acceleration_e": [
+        "5000",
+        "5000"
+      ],
+      "machine_max_jerk_x": [
+        "9",
+        "9"
+      ],
+      "machine_max_jerk_z": [
+        "5",
+        "5"
+      ],
+      "machine_max_jerk_e": [
+        "3",
+        "3"
+      ],
+      "hotend_heating_rate": [
+        "2"
+      ],
+      "hotend_cooling_rate": [
+        "2"
+      ],
+      "printable_area": [
+        "0x0",
+        "180x0",
+        "180x180",
+        "0x180"
+      ],
+      "printable_height": "180",
+      "bed_exclude_area": [],
+      "nozzle_height": "4.76"
+    },
+    "a1": {
+      "modelId": "N2S",
+      "file": "Bambu Lab A1 0.4 nozzle.json",
+      "physical_extruder_map": [
+        "0"
+      ],
+      "extruder_printable_area": [],
+      "extruder_printable_height": [],
+      "extruder_offset": [
+        "0x0"
+      ],
+      "extruder_height_gap": "0",
+      "extruder_type": [
+        "Direct Drive"
+      ],
+      "machine_max_speed_x": [
+        "500",
+        "200"
+      ],
+      "machine_max_speed_y": [
+        "500",
+        "200"
+      ],
+      "machine_max_speed_z": [
+        "30",
+        "30"
+      ],
+      "machine_max_speed_e": [
+        "30",
+        "30"
+      ],
+      "machine_max_acceleration_extruding": [
+        "12000",
+        "12000"
+      ],
+      "machine_max_acceleration_travel": [
+        "9000",
+        "9000"
+      ],
+      "machine_max_acceleration_z": [
+        "1500",
+        "1500"
+      ],
+      "machine_max_acceleration_e": [
+        "5000",
+        "5000"
+      ],
+      "machine_max_jerk_x": [
+        "9",
+        "9"
+      ],
+      "machine_max_jerk_z": [
+        "3",
+        "3"
+      ],
+      "machine_max_jerk_e": [
+        "3",
+        "3"
+      ],
+      "hotend_heating_rate": [
+        "2"
+      ],
+      "hotend_cooling_rate": [
+        "2"
+      ],
+      "printable_area": [
+        "0x0",
+        "256x0",
+        "256x256",
+        "0x256"
+      ],
+      "printable_height": "256",
+      "bed_exclude_area": [],
+      "nozzle_height": "4.76"
+    },
+    "p1s": {
+      "modelId": "C12",
+      "file": "Bambu Lab P1S 0.4 nozzle.json",
+      "physical_extruder_map": [
+        "0"
+      ],
+      "extruder_printable_area": [],
+      "extruder_printable_height": [],
+      "extruder_offset": [
+        "0x2"
+      ],
+      "extruder_height_gap": "0",
+      "extruder_type": [
+        "Direct Drive"
+      ],
+      "machine_max_speed_x": [
+        "500",
+        "500",
+        "500",
+        "500"
+      ],
+      "machine_max_speed_y": [
+        "500",
+        "500",
+        "500",
+        "500"
+      ],
+      "machine_max_speed_z": [
+        "20",
+        "20",
+        "20",
+        "20"
+      ],
+      "machine_max_speed_e": [
+        "30",
+        "30",
+        "30",
+        "30"
+      ],
+      "machine_max_acceleration_extruding": [
+        "20000",
+        "20000",
+        "20000",
+        "20000"
+      ],
+      "machine_max_acceleration_travel": [
+        "9000",
+        "9000",
+        "9000",
+        "9000"
+      ],
+      "machine_max_acceleration_z": [
+        "500",
+        "500",
+        "500",
+        "500"
+      ],
+      "machine_max_acceleration_e": [
+        "5000",
+        "5000",
+        "5000",
+        "5000"
+      ],
+      "machine_max_jerk_x": [
+        "9",
+        "9",
+        "9",
+        "9"
+      ],
+      "machine_max_jerk_z": [
+        "3",
+        "3",
+        "3",
+        "3"
+      ],
+      "machine_max_jerk_e": [
+        "2.5",
+        "2.5",
+        "2.5",
+        "2.5"
+      ],
+      "hotend_heating_rate": [
+        "2",
+        "2"
+      ],
+      "hotend_cooling_rate": [
+        "2",
+        "2"
+      ],
+      "printable_area": [
+        "0x0",
+        "256x0",
+        "256x256",
+        "0x256"
+      ],
+      "printable_height": "250",
+      "bed_exclude_area": [
+        "0x0",
+        "18x0",
+        "18x28",
+        "0x28"
+      ],
+      "nozzle_height": "4.2"
+    },
+    "x1e": {
+      "modelId": "C13",
+      "file": "Bambu Lab X1E 0.4 nozzle.json",
+      "physical_extruder_map": [
+        "0"
+      ],
+      "extruder_printable_area": [],
+      "extruder_printable_height": [],
+      "extruder_offset": [
+        "0x2"
+      ],
+      "extruder_height_gap": "0",
+      "extruder_type": [
+        "Direct Drive"
+      ],
+      "machine_max_speed_x": [
+        "500",
+        "500",
+        "500",
+        "500"
+      ],
+      "machine_max_speed_y": [
+        "500",
+        "500",
+        "500",
+        "500"
+      ],
+      "machine_max_speed_z": [
+        "20",
+        "20",
+        "20",
+        "20"
+      ],
+      "machine_max_speed_e": [
+        "30",
+        "30",
+        "30",
+        "30"
+      ],
+      "machine_max_acceleration_extruding": [
+        "20000",
+        "20000",
+        "20000",
+        "20000"
+      ],
+      "machine_max_acceleration_travel": [
+        "9000",
+        "9000",
+        "9000",
+        "9000"
+      ],
+      "machine_max_acceleration_z": [
+        "500",
+        "500",
+        "500",
+        "500"
+      ],
+      "machine_max_acceleration_e": [
+        "5000",
+        "5000",
+        "5000",
+        "5000"
+      ],
+      "machine_max_jerk_x": [
+        "9",
+        "9",
+        "9",
+        "9"
+      ],
+      "machine_max_jerk_z": [
+        "3",
+        "3",
+        "3",
+        "3"
+      ],
+      "machine_max_jerk_e": [
+        "2.5",
+        "2.5",
+        "2.5",
+        "2.5"
+      ],
+      "hotend_heating_rate": [
+        "2",
+        "2"
+      ],
+      "hotend_cooling_rate": [
+        "2",
+        "2"
+      ],
+      "printable_area": [
+        "0x0",
+        "256x0",
+        "256x256",
+        "0x256"
+      ],
+      "printable_height": "250",
+      "bed_exclude_area": [
+        "0x0",
+        "18x0",
+        "18x28",
+        "0x28"
+      ],
+      "nozzle_height": "4.2"
+    },
+    "x2d": {
+      "modelId": "N6",
+      "file": "Bambu Lab X2D 0.4 nozzle.json",
+      "physical_extruder_map": [
+        "1",
+        "0"
+      ],
+      "extruder_printable_area": [
+        "0x0,256x0,256x256,0x256",
+        "20.5x0,256x0,256x256,20.5x256"
+      ],
+      "extruder_printable_height": [
+        "261",
+        "256"
+      ],
+      "extruder_offset": [
+        "0x0",
+        "0x0"
+      ],
+      "extruder_height_gap": "7",
+      "extruder_type": [
+        "Direct Drive",
+        "Bowden"
+      ],
+      "machine_max_speed_x": [
+        "1000",
+        "1000",
+        "1000",
+        "1000",
+        "1000",
+        "1000",
+        "1000",
+        "1000",
+        "1000",
+        "1000",
+        "1000",
+        "1000"
+      ],
+      "machine_max_speed_y": [
+        "1000",
+        "1000",
+        "1000",
+        "1000",
+        "1000",
+        "1000",
+        "1000",
+        "1000",
+        "1000",
+        "1000",
+        "1000",
+        "1000"
+      ],
+      "machine_max_speed_z": [
+        "20",
+        "20",
+        "20",
+        "20",
+        "20",
+        "20",
+        "20",
+        "20",
+        "20",
+        "20",
+        "20",
+        "20"
+      ],
+      "machine_max_speed_e": [
+        "30",
+        "30",
+        "30",
+        "30",
+        "30",
+        "30",
+        "120",
+        "120",
+        "120",
+        "120",
+        "120",
+        "120"
+      ],
+      "machine_max_acceleration_extruding": [
+        "20000",
+        "20000",
+        "20000",
+        "20000",
+        "20000",
+        "20000",
+        "20000",
+        "20000",
+        "20000",
+        "20000",
+        "20000",
+        "20000"
+      ],
+      "machine_max_acceleration_travel": [
+        "9000",
+        "9000",
+        "9000",
+        "9000",
+        "9000",
+        "9000",
+        "9000",
+        "9000",
+        "9000",
+        "9000",
+        "9000",
+        "9000"
+      ],
+      "machine_max_acceleration_z": [
+        "500",
+        "500",
+        "500",
+        "500",
+        "500",
+        "500",
+        "500",
+        "500",
+        "500",
+        "500",
+        "500",
+        "500"
+      ],
+      "machine_max_acceleration_e": [
+        "30000",
+        "5000",
+        "5000",
+        "30000",
+        "5000",
+        "5000",
+        "5000",
+        "5000",
+        "5000",
+        "5000",
+        "5000",
+        "5000"
+      ],
+      "machine_max_jerk_x": [
+        "9",
+        "9",
+        "9",
+        "9",
+        "9",
+        "9",
+        "9",
+        "9",
+        "9",
+        "9",
+        "9",
+        "9"
+      ],
+      "machine_max_jerk_z": [
+        "3",
+        "3",
+        "3",
+        "3",
+        "3",
+        "3",
+        "3",
+        "3",
+        "3",
+        "3",
+        "3",
+        "3"
+      ],
+      "machine_max_jerk_e": [
+        "2.5",
+        "2.5",
+        "2.5",
+        "2.5",
+        "2.5",
+        "2.5",
+        "2.5",
+        "2.5",
+        "2.5",
+        "2.5",
+        "2.5",
+        "2.5"
+      ],
+      "hotend_heating_rate": [
+        "1.5",
+        "1.5",
+        "1.5",
+        "1.5",
+        "1.5",
+        "1.5"
+      ],
+      "hotend_cooling_rate": [
+        "2",
+        "2",
+        "2",
+        "2",
+        "2",
+        "2"
+      ],
+      "printable_area": [
+        "0x0",
+        "256x0",
+        "256x256",
+        "0x256 "
+      ],
+      "printable_height": "261",
+      "bed_exclude_area": [],
+      "nozzle_height": "4"
+    },
+    "h2d": {
+      "modelId": "O1D",
+      "file": "Bambu Lab H2D 0.4 nozzle.json",
+      "physical_extruder_map": [
+        "1",
+        "0"
+      ],
+      "extruder_printable_area": [
+        "0x0,325x0,325x320,0x320",
+        "25x0,350x0,350x320,25x320"
+      ],
+      "extruder_printable_height": [
+        "320",
+        "325"
+      ],
+      "extruder_offset": [
+        "0x0",
+        "0x0"
+      ],
+      "extruder_height_gap": "5",
+      "extruder_type": [
+        "Direct Drive",
+        "Direct Drive"
+      ],
+      "machine_max_speed_x": [
+        "1000",
+        "1000",
+        "1000",
+        "1000",
+        "1000",
+        "1000",
+        "1000",
+        "1000",
+        "1000",
+        "1000",
+        "1000",
+        "1000",
+        "1000",
+        "1000"
+      ],
+      "machine_max_speed_y": [
+        "1000",
+        "1000",
+        "1000",
+        "1000",
+        "1000",
+        "1000",
+        "1000",
+        "1000",
+        "1000",
+        "1000",
+        "1000",
+        "1000",
+        "1000",
+        "1000"
+      ],
+      "machine_max_speed_z": [
+        "30",
+        "30",
+        "30",
+        "30",
+        "30",
+        "30",
+        "30",
+        "30",
+        "30",
+        "30",
+        "30",
+        "30",
+        "30",
+        "30"
+      ],
+      "machine_max_speed_e": [
+        "50",
+        "50",
+        "50",
+        "50",
+        "50",
+        "50",
+        "50",
+        "50",
+        "50",
+        "50",
+        "50",
+        "50",
+        "50",
+        "50"
+      ],
+      "machine_max_acceleration_extruding": [
+        "20000",
+        "20000",
+        "20000",
+        "20000",
+        "20000",
+        "20000",
+        "20000",
+        "20000",
+        "20000",
+        "20000",
+        "20000",
+        "20000",
+        "20000",
+        "20000"
+      ],
+      "machine_max_acceleration_travel": [
+        "9000",
+        "9000",
+        "9000",
+        "9000",
+        "9000",
+        "9000",
+        "9000",
+        "9000",
+        "9000",
+        "9000",
+        "9000",
+        "9000",
+        "9000",
+        "9000"
+      ],
+      "machine_max_acceleration_z": [
+        "500",
+        "500",
+        "500",
+        "500",
+        "500",
+        "500",
+        "500",
+        "500",
+        "500",
+        "500",
+        "500",
+        "500",
+        "500",
+        "500"
+      ],
+      "machine_max_acceleration_e": [
+        "5000",
+        "5000",
+        "5000",
+        "5000",
+        "5000",
+        "5000",
+        "5000",
+        "5000",
+        "5000",
+        "5000",
+        "5000",
+        "5000",
+        "5000",
+        "5000"
+      ],
+      "machine_max_jerk_x": [
+        "9",
+        "9",
+        "9",
+        "9",
+        "9",
+        "9",
+        "9",
+        "9",
+        "9",
+        "9",
+        "9",
+        "9",
+        "9",
+        "9"
+      ],
+      "machine_max_jerk_z": [
+        "3",
+        "3",
+        "3",
+        "3",
+        "3",
+        "3",
+        "3",
+        "3",
+        "3",
+        "3",
+        "3",
+        "3",
+        "3",
+        "3"
+      ],
+      "machine_max_jerk_e": [
+        "2.5",
+        "2.5",
+        "2.5",
+        "2.5",
+        "2.5",
+        "2.5",
+        "2.5",
+        "2.5",
+        "2.5",
+        "2.5",
+        "2.5",
+        "2.5",
+        "2.5",
+        "2.5"
+      ],
+      "hotend_heating_rate": [
+        "3.6",
+        "3.6",
+        "3.6",
+        "3.6",
+        "3.6",
+        "3.6",
+        "3.6"
+      ],
+      "hotend_cooling_rate": [
+        "2",
+        "2",
+        "2",
+        "2",
+        "2",
+        "2",
+        "2"
+      ],
+      "printable_area": [
+        "0x0",
+        "350x0",
+        "350x320",
+        "0x320"
+      ],
+      "printable_height": "325",
+      "bed_exclude_area": [],
+      "nozzle_height": "4"
+    }
+  },
+  "sourceTreeSHA": "56e0ee35f0e720ba6819ec2395a17e679aa95751"
+}
+;
+/* Numeric Bambu Studio profiles, standard flow, first (left) extruder.
+   BambuProfiles is embedded from bambu-profiles.json; no network is used. */
+const profileMaterialBase={...MATERIALS};
+const profileMachineBase={...MACHINES};
+Object.assign(MACHINES,{
+  x1e:{...MACHINES.p1s,name:'Bambu Lab X1E',code:'X1E',modelId:'C13',bed:[256,256,250],travelRec:150,hotMax:320,bedMax:110},
+  x2d:{...MACHINES.p1s,name:'Bambu Lab X2D',code:'X2D',modelId:'N6',bed:[256,256,260],plate:[256,256],travelRec:200,hotMax:300,bedMax:120,dual:true},
+  h2d:{...MACHINES.p1s,name:'Bambu Lab H2D',code:'H2D',modelId:'O1D',bed:[325,320,320],plate:[350,320],travelRec:200,hotMax:350,bedMax:120,dual:true}
+});
+for(const [id,m] of Object.entries(MACHINES)){
+  const p=BambuProfiles.machines[id],n=k=>+p[k][0];
+  m.estimate={...m.estimate};m.hotMax??=300;m.bedMax??=id==='a1mini'?80:100;
+  m.excluded=['p1s','x1e'].includes(id)?[0,0,18,28]:null;
+  if(['x1e','x2d','h2d'].includes(id))Object.assign(m.estimate,{hotRate:n('hotend_heating_rate'),hotCool:n('hotend_cooling_rate'),
+    printAccel:n('machine_max_acceleration_extruding'),travelAccel:n('machine_max_acceleration_travel'),zAccel:n('machine_max_acceleration_z'),eAccel:n('machine_max_acceleration_e'),
+    maxXY:Math.min(n('machine_max_speed_x'),n('machine_max_speed_y')),maxZ:n('machine_max_speed_z'),maxE:n('machine_max_speed_e'),jerkXY:n('machine_max_jerk_x'),jerkZ:n('machine_max_jerk_z'),jerkE:n('machine_max_jerk_e')});
+}
+function resolvedMaterial(id,machine=$('machine').value,nozzle=$('nozzle').value){
+  const source=BambuProfiles.materials[id];if(!source)return profileMaterialBase[id];
+  const profile=source.profiles[machine+'/'+Number(nozzle)],fallback=source.profiles[machine+'/0.4'];
+  const p=profile||fallback;
+  const rheo=id==='pla_basic'?{...profileMaterialBase.pla_basic.rheo,dref:+nozzle}:{K:null,n:null,Tref:p.nozzle,Ea:null,dref:+nozzle,confidence:'銘柄固有の粘性係数は未確認',
+    note:'この銘柄のK・n・Eaは使用しません。公式の機種・ノズル径別MVSを流量上限に使います。実測係数がある場合は入力できます。',url:BambuProfiles.source};
+  return {...p,name:source.name,profileName:p.name,supported:!!profile,profileFile:p.file,bedRange:id==='tpu_ams'?[30,45]:[35,65],rheo,
+    source:'Bambu Studio公式・標準流量 '+BambuProfiles.date,hardness:id==='tpu_ams'?'68D':null};
+}
+for(const id of Object.keys(BambuProfiles.materials))Object.defineProperty(MATERIALS,id,{enumerable:true,configurable:true,get:()=>resolvedMaterial(id)});
+function profileProblems(){
+  const mat=MATERIALS[$('material').value],nozzle=+$('nozzle').value,m=MACHINES[$('machine').value],issues=[];
+  if(mat.supported===false)issues.push({id:'profile-nozzle',title:'材料とノズル径の組み合わせ',detail:`${mat.name} / ${nozzle} mm は、この機種の公式材料プロファイルがありません。0.4 mmへ変更して再計算します。`,fix:()=>{$('nozzle').value='0.4';syncMaterialModelDefaults();applyAllSettings();}});
+  if($('material').value==='pla_glow'){
+    if(nozzle<.4)issues.push({id:'glow-nozzle',title:'PLA Glowのノズル',detail:'PLA Glowは0.4／0.6／0.8 mmの硬化鋼ノズルが推奨です。0.4 mmへ変更します。',fix:()=>{$('nozzle').value='0.4';syncMaterialModelDefaults();applyAllSettings();}});
+    issues.push({id:'glow-wear',title:'PLA Glowの摩耗と給材',detail:'蓄光粉末でノズル・給材経路が摩耗しやすいため、硬化鋼ノズルを使用してください。'+(['a1','a1mini'].includes($('machine').value)?'公式ではAMS liteによるPLA Glowの使用は非推奨です。':'AMSの給材部も摩耗を確認してください。'),fix:null});
+  }
+  if($('material').value==='tpu_ams')issues.push({id:'tpu-dry',title:'TPU for AMSの乾燥',detail:'TPU for AMS（68D）はTPU 95Aと別の材料です。乾燥状態を保ち、初回は糸の伸び・接着を小さなモデルで確認してください。',fix:null});
+  if(m.dual)issues.push({id:'left-nozzle',title:'左ノズルのAMS割り当て',detail:`${m.name}は左ノズルのみを使用します。使用範囲 ${m.bed.join('×')} mm。Bambu Studioの送信画面で使用フィラメントを左ノズルに接続したAMSへ割り当ててください。`,fix:null});
+  return issues;
+}
+function updateProfilePanel(){
+  const m=MACHINES[$('machine').value],mat=MATERIALS[$('material').value];
+  $('printSpeed').max=m.estimate.maxXY;
+  $('hotend').max=m.hotMax;$('bedtemp').max=m.bedMax;
+  $('profileSummary').textContent=`${m.name.replace('Bambu Lab ','')} / ${mat.name.replace('Bambu ','')}`;
+  $('profileDetails').textContent=`使用範囲 ${m.bed.join(' × ')} mm${m.dual?'（左ノズル）':''} · XY上限 ${m.estimate.maxXY} / Z上限 ${m.estimate.maxZ} mm/s\n`+
+    `公式設定値：ノズル ${mat.nozzle} ℃ / ベッド ${mat.bed} ℃ / Flow ${mat.flow} / MVS ${mat.mvs} mm³/s / 密度 ${mat.density} g/cm³${mat.hardness?' / 硬さ '+mat.hardness:''}\n`+
+    (mat.profileFile?`出典：${mat.profileFile}（${BambuProfiles.date}、標準流量）`:'既存の材料設定')+
+    ($('material').value==='pla_basic'?'\n粘性係数は従来の文献代表値です。':BambuProfiles.materials[$('material').value]?'\n粘性係数K・n・Eaは未確認。公式MVSを採用し、見かけ粘度は表示しません。':'');
+  $('profileCompatibility').textContent=profileProblems().map(x=>x.detail).join(' ');
+}
+const profilePreviousDesign=updateDesignModel;
+updateDesignModel=()=>{
+  profilePreviousDesign();updateProfilePanel();
+  if(!(currentRheo().n>0))$('modelExampleBody').innerHTML=$('modelExampleBody').innerHTML.replace(/文献レオロジー:[^<]*<br>/,'銘柄固有の粘性係数は未確認です。公式MVSを流量上限として使用します。<br>');
+};
+function isIdleHeaterOff(raw){
+  const c=raw.split(';')[0].trim();
+  return MACHINES[$('machine').value].dual&&/^M104\b/i.test(c)&&/\bT0(?:\s|$)/i.test(c)&&/\bS0(?:\s|$)/i.test(c);
+}
+const profilePreviousTemperature=temperatureSafetyPass;
+temperatureSafetyPass=(input,options={})=>{
+  // Keep the unused right heater off; a zero there is not a cold-print error.
+  const idle=[];
+  const masked=input.split(/\r?\n/).map(raw=>{if(!isIdleHeaterOff(raw))return raw;idle.push(raw);return '; GCE_CHECK_IDLE_HEATER '+(idle.length-1);}).join('\n');
+  const result=profilePreviousTemperature(masked,options);
+  result.text=result.text.replace(/^; GCE_CHECK_IDLE_HEATER (\d+)$/gm,(_,i)=>idle[+i]);return result;
+};
+for(const id of ['machine','nozzle'])$(id).addEventListener('change',()=>{syncMaterialModelDefaults();$('travelSpeed').value=MACHINES[$('machine').value].travelRec;updateDesignModel();});
+
+function profileGcode(input){
+  const m=MACHINES[$('machine').value],mat=MATERIALS[$('material').value];
+  let lines=input.split(/\r?\n/).filter(l=>!/^; @GCE_PROFILE /.test(l)&&!l.includes('; GCE_MATERIAL_FAN')&&!l.includes('; GCE_IDLE_HEATER'));
+  const out=[];
+  for(let raw of lines){
+    const c=raw.split(';')[0].trim();
+    if(/^M10[49]\b/i.test(c)){
+      raw=raw.replace(/\s+T[01](?=\s|;|$)/g,'');
+      if(m.dual){const at=raw.indexOf(';');raw=at<0?raw+' T1':raw.slice(0,at).trimEnd()+' T1 '+raw.slice(at);}
+    }
+    out.push(raw);
+    if(m.dual&&/^M104\b/.test(c))out.push('M104 S0 T0 ; GCE_IDLE_HEATER');
+    const lm=raw.match(/^; GCE_LAYER: (\d+)$/);
+    if(lm&&Number.isFinite(mat.fanMax)){const fan=+lm[1]<mat.fanOffLayers?0:Math.round(mat.fanMax*255/100);out.push(`M106 P1 S${fan} ; GCE_MATERIAL_FAN`);}
+  }
+  return out.join('\n').trimEnd()+'\n; @GCE_PROFILE '+JSON.stringify({version:1,machine:$('machine').value,material:$('material').value,nozzle:$('nozzle').value,standardFlow:true,leftOnly:!!m.dual})+'\n';
+}
+const profilePreviousThread=threadGcode;
+threadGcode=(input,options={})=>{const result=profilePreviousThread(input,options);result.text=refreshLayerHash(profileGcode(result.text),input);return result;};
+const profilePreviousPrepare=prepareLayerGcode;
+prepareLayerGcode=text=>refreshLayerHash(profileGcode(profilePreviousPrepare(text)),text);
+const profilePreviousApply=applyAllSettings;
+applyAllSettings=()=>{profilePreviousApply();if(!speedEnabled()&&!processInputErrors().length)acceptProcessText(profileGcode(ta.value));};
+const profilePreviousRestore=restoreSpeedSettings;
+restoreSpeedSettings=text=>{
+  let p;try{p=JSON.parse(text.match(/^; @GCE_PROFILE (.+)$/m)?.[1]||'null');}catch{}
+  if(p?.version===1){if(MACHINES[p.machine])$('machine').value=p.machine;if(MATERIALS[p.material])$('material').value=p.material;}
+  profilePreviousRestore(text);
+};
+const profilePreviousReview=collectRepairIssues;
+collectRepairIssues=()=>{
+  const issues=[...profilePreviousReview(),...profileProblems()];
+  if(LayerEngine.decode(ta.value)?.layers.length&&profileGcode(ta.value)!==ta.value)issues.push({id:'machine-material-code',title:'機種・材料のG-code設定',detail:'選択した機種のヒーター割当と、材料の層別冷却設定・保存情報を反映します。',fix:()=>acceptProcessText(profileGcode(ta.value))});
+  return issues;
+};
+const profilePreviousConfig=makeConfigBlock;
+makeConfigBlock=()=>{
+  const m=MACHINES[$('machine').value],mat=MATERIALS[$('material').value],n=amsInfo().count,noz=String(+$('nozzle').value),p=BambuProfiles.machines[$('machine').value];
+  const map=new Map(profilePreviousConfig().slice(1,-1).map(l=>{const at=l.indexOf(' = ');return[l.slice(2,at),l.slice(at+3)];}));
+  map.set('filament_settings_id',Array(n).fill(mat.profileName||mat.name).join(';'));
+  map.set('nozzle_type',$('material').value==='pla_glow'||['x1e','x2d','h2d'].includes($('machine').value)?'hardened_steel':map.get('nozzle_type'));
+  if(mat.fanMax!==undefined)for(const [key,v] of [['fan_min_speed',mat.fanMin],['fan_max_speed',mat.fanMax],['close_fan_the_first_x_layers',mat.fanOffLayers],['nozzle_temperature_range_low',mat.hotendRange[0]],['nozzle_temperature_range_high',mat.hotendRange[1]],['temperature_vitrification',mat.vitrification]])map.set(key,Array(n).fill(v).join(','));
+  if(!currentRheo().n)for(const key of [...map.keys()])if(key.startsWith('rheology_'))map.delete(key);
+  map.set('bed_exclude_area',(p.bed_exclude_area||[]).join(','));
+  map.set('printable_area',`0x0,${m.bed[0]}x0,${m.bed[0]}x${m.bed[1]},0x${m.bed[1]}`);map.set('printable_height',String(m.bed[2]));
+  for(const key of Object.keys(p).filter(k=>k.startsWith('machine_max_')))map.set(key,p[key].join(','));
+  if(m.dual){
+    map.set('nozzle_diameter',[noz,noz].join(','));map.set('physical_extruder_map','1,0');map.set('master_extruder_id','1');map.set('printer_extruder_id','1,2');map.set('single_extruder_multi_material','1');
+    map.set('extruder_type',p.extruder_type.join(';'));map.set('extruder_offset','0x0,0x0');map.set('extruder_height_gap',p.extruder_height_gap);
+    map.set('extruder_printable_area',p.extruder_printable_area.join(';'));map.set('extruder_printable_height',p.extruder_printable_height.join(','));
+  }
+  return ['; CONFIG_BLOCK_START',...[...map].map(([k,v])=>`; ${k} = ${v}`),'; CONFIG_BLOCK_END'];
+};
+const profilePreviousProject=buildProjectSettings;
+buildProjectSettings=()=>{
+  const p=JSON.parse(profilePreviousProject()),m=MACHINES[$('machine').value],count=m.dual?2:1;
+  p.nozzle_diameter=Array(count).fill(String(+$('nozzle').value));p.nozzle_type=Array(count).fill($('material').value==='pla_glow'||m.dual||$('machine').value==='x1e'?'hardened_steel':+$('nozzle').value>=.6?'hardened_steel':'stainless_steel');
+  for(const key of ['fan_min_speed','fan_max_speed','close_fan_the_first_x_layers','nozzle_temperature_range_low','nozzle_temperature_range_high','temperature_vitrification'])if(p[key]!==undefined)p[key]=String(p[key]).split(',');
+  if(m.dual){Object.assign(p,{physical_extruder_map:[1,0],printer_extruder_id:['1','2'],master_extruder_id:'1',extruder_type:BambuProfiles.machines[$('machine').value].extruder_type,extruder_offset:['0x0','0x0'],extruder_printable_area:BambuProfiles.machines[$('machine').value].extruder_printable_area,extruder_printable_height:BambuProfiles.machines[$('machine').value].extruder_printable_height});}
+  return JSON.stringify(p,null,2);
+};
 
 // initial sample
 ta.value=makeInitialModel();

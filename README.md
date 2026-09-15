@@ -108,7 +108,38 @@ Bambu向け3MF出力、温度検査、所要時間推定に対応しています
 
 機種別の交換手順はBambu Lab公式の [A1 mini交換テンプレート](https://github.com/bambulab/BambuStudio/blob/master/resources/profiles/BBL/machine/Bambu%20Lab%20A1%20mini%200.4%20nozzle%20template%20change_filament_gcode.json)、[A1交換テンプレート](https://github.com/bambulab/BambuStudio/blob/master/resources/profiles/BBL/machine/Bambu%20Lab%20A1%200.4%20nozzle%20template%20change_filament_gcode.json)、[P1S交換テンプレート](https://github.com/bambulab/BambuStudio/blob/master/resources/profiles/BBL/machine/Bambu%20Lab%20P1S%200.4%20nozzle%20template%20change_filament_gcode.json) の装置位置・命令順を参考に、共通材料用として実装しています。3MF形式は公式の [bbs_3mf.cpp](https://github.com/bambulab/BambuStudio/blob/master/src/libslic3r/Format/bbs_3mf.cpp) を参照しました。公式スライサーの開始処理・材料別交換レシピ・タワー生成全体を再現したものではありません。実機での切断・パージ・接着品質は未検証です。最初は小さな2層モデルで実機の交換を確認してください。
 
-## 開発用ファイル
+## 機種・材料プロファイルの拡張（2026-09-15）
+
+機種にX1E・X2D・H2D、材料にBambu PLA Matte・PLA Glow・TPU for AMSを追加しました。A1 mini・A1・P1Sと従来の材料も引き続き選択できます。機種・材料・ノズル径を選ぶと上部の温度・Flow・MVSが切り替わり、「一括反映＋自動検査」でモデルのE・F・温度・冷却を更新します。「再検査・修正」でも項目ごとの確認で整合させられます。目標の糸径・造形速度は維持します。
+
+| 追加機種 | 本エディターで使用する範囲（X×Y×Z mm） | XY / Z速度上限（mm/s） | ノズル温度上限 |
+| --- | --- | --- | --- |
+| X1E | 256×256×250 | 500 / 20 | 320 ℃ |
+| X2D（左ノズル） | 256×256×260 | 1000 / 20 | 300 ℃ |
+| H2D（左ノズル） | 325×320×320 | 1000 / 30 | 350 ℃ |
+
+上限速度は実際の造形速度ではありません。材料MVS・第1層・接着部・Z移動・加減速の制限が優先します。X1Eは公式スライサーの有効高さ250 mm、X2Dは公称高さ260 mm、H2Dは公式の左ノズル可動範囲を使用します。X1Eのプレート除外領域も検査に反映します。
+
+X2D・H2Dでは全AMS番号を**左ノズル**に割り当て、左ヒーター（物理T1）を加熱し、右ヒーター（物理T0）を停止します。AMSのT0〜T3という論理フィラメント番号とは別の対応です。3MFにも機種ID・2ノズル構成・左側への物理割当を保存します。送信画面では左ノズルに接続したAMSを選択してください。右ヒーター停止を低温印刷のエラーとして再加熱することはありません。チャンバー加熱や左右ノズル交互の造形は対象外です。
+
+標準流量ホットエンド・Textured PEI Plate用の公式材料設定89件を内蔵しています。代表例は次のとおりです（0.4 mmノズル）。
+
+| 材料 | ノズル温度 | 密度（g/cm³） | Flow | MVS（mm³/s） |
+| --- | --- | --- | --- | --- |
+| PLA Basic | 220 ℃ | 1.26 | 0.98 | 21、H2Dは25 |
+| PLA Matte | 220 ℃ | 1.32 | 0.98、X2Dは1.006 | 22、H2Dは25 |
+| PLA Glow | 220 ℃ | 1.26 | 0.98 | 18 |
+| TPU for AMS | 230 ℃ | 1.26 | 0.97 | 18、H2Dは12 |
+
+PLAのベッド温度はA1系65 ℃、その他55 ℃、TPU for AMSは35 ℃です。値は製品TDSの一般特性表ではなく、Bambu Studioの造形プロファイル値です。ノズル径を変更すると対応する別プロファイルを選びます。対応する公式プロファイルがない組合せは、0.4 mmへの変更を提案します。冷却ファン・最初の層のファン停止数・材料ID・使用重量にも材料設定を反映します。
+
+TPU for AMSは68Dの材料で、既存のTPU 95Aと別に扱います。PLA Glowには硬化鋼ノズル・0.4 mm以上の推奨とAMS lite非推奨を表示します。新しく追加した3材料について、銘柄固有の粘性係数K・n・Eaは未確認なので数値を捏造せず、公式MVSを流量上限に使用します。見かけ粘度は「—」になります。実測係数があれば従来の粘性パラメータ画面で設定できます。
+
+左側の「機種・材料の適用値」で選択中の値・出典ファイル名・注意点を確認できます。G-codeを保存して再度開くと機種・材料・ノズル径も復元します。
+
+出典：Bambu Lab公式 [機種プロファイル](https://github.com/bambulab/BambuStudio/tree/master/resources/profiles/BBL/machine)、[フィラメントプロファイル](https://github.com/bambulab/BambuStudio/tree/master/resources/profiles/BBL/filament)、[TPU for AMS製品情報](https://uk.store.bambulab.com/collections/pc-tpu/products/tpu-for-ams?skr=yes)。取得日2026-09-15、Git tree SHA `56e0ee35f0e720ba6819ec2395a17e679aa95751`。数値は継承元の設定を解決した公式JSONと照合済みです。新機種のAMS交換手順・実機造形結果は未検証のため、最初は小さな2層モデルで確認してください。
+
+## 開発・再ビルド
 
 `editor-base.html` は添付エディターの保存コピーです。追加機能は `layer-engine.js`、`layer-ui.js`、`layer-panel.html`、`layer-panel.css`、`process-review.js`、`review-panel.html`、`svg-import.js`、`speed-engine.js`、`speed-ui.js`、`speed-panel.html`、`ams-engine.js`、`ams-ui.js` に分けています。
 
@@ -118,3 +149,5 @@ node --test tests/*.test.cjs
 ```
 
 `build.py` で単独動作する `index.html` を再生成します。
+
+機種・材料の追加分は `profiles.js`、`profile-panel.html`、`bambu-profiles.json` に分けています。HTMLへの数値埋め込みはビルド時に行い、使用時にネット接続は不要です。
