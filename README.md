@@ -92,9 +92,25 @@ Bambu向け3MF出力、温度検査、所要時間推定に対応しています
 
 穴を含む複合path、入れ子SVG、文字、画像、use参照には対応しません。複合pathはSVG側で別々のpathに分割してください。1層に設定するのは選択した1つの閉じた輪郭です。2 MB・200図形まで、輪郭は最大2048頂点。開いた線・自己交差は適用できません。SVGのスクリプトや外部画像は実行／読み込みません。
 
-## 開発用
+## 層ごとのAMSフィラメント（2026-09-15）
 
-`editor-base.html` は添付エディターの保存コピーです。追加機能は `layer-engine.js`、`layer-ui.js`、`layer-panel.html`、`layer-panel.css`、`process-review.js`、`review-panel.html`、`svg-import.js`、`speed-engine.js`、`speed-ui.js`、`speed-panel.html` に分けています。
+各層の上部に「AMSフィラメント」を追加しました。AMS 1〜4から選び「変更をモデル・G-codeに反映」を押します。初期値は1、上に追加した層は直下の番号を引き継ぎます。層一覧にも番号を表示し、保存・再読込・元に戻すに対応します。古い層データで番号がない場合は1を表示し、反映時に番号を保存します。
+
+- A1 mini／A1はAMS lite、P1SはAMSの1台目・4スロットを想定しています。機種は上部で正しく選択してください。
+- **全スロットに共通の材料・温度・Flow・糸径を使用します。** 同じ材料の色替え用で、層ごとに異なる材料温度や収縮率を設定する機能ではありません。
+- 編集画面のG-codeには `GCE_AMS_SLOT` の番号を保存します。G-code／3MF出力時に初回装填と番号が変わる層の交換を挿入します。同じ番号が続けば交換しません。番号1〜4は出力のT0〜T3に対応します。
+- Bambu Studioの送信画面で、フィラメント番号1〜4を実際のAMSスロット1〜4へ割り当ててください。3MFの番号は論理フィラメント番号であり、実機への送信時に変更できます。実際のスプール色は取得しないため、3MFの色情報は白で出力します。
+- 「AMS出力の設定」で交換1回あたりのパージ量を変更できます（初期値250 mm³、50〜800 mm³）。初回にも適用します。この初期値は本アプリの出発値で、濃色→淡色などでは色移りを見て調整が必要です。各スロットの使用量には指定パージ量を含めます。
+
+交換はモデルの最高到達Zより3 mm上へ退避し、機種別のカッター／廃棄位置でAMS命令、押出し、ワイプを実行します。交換後にE座標・押出しモード・送り速度・加速度・ファン状態を戻します。交換用の動作はモデルの線幅・糸径・速度の再計算対象に入らず、出力したG-codeを本エディターで開く際は検証後に編集用の状態へ戻します。交換区間を外部で変更したファイルは勝手に取り除かず、元の編集用ファイルから開くよう案内します。
+
+3MFには使用したフィラメント番号、番号ごとの使用量、初回番号、交換順序、必要な数の材料設定を保存します。`filament_map` はAMSトレイではなく物理ホットエンドへの割当なので、全フィラメントを単一のホットエンド1に割り当てます。退避・パージ位置はモデルの外形寸法や輪郭プレビューに含めません。表示時間にはファームウェア内部の切断・巻き戻し・装填時間を含まないため、AMS使用時の実時間は長くなります。
+
+機種別の交換手順はBambu Lab公式の [A1 mini交換テンプレート](https://github.com/bambulab/BambuStudio/blob/master/resources/profiles/BBL/machine/Bambu%20Lab%20A1%20mini%200.4%20nozzle%20template%20change_filament_gcode.json)、[A1交換テンプレート](https://github.com/bambulab/BambuStudio/blob/master/resources/profiles/BBL/machine/Bambu%20Lab%20A1%200.4%20nozzle%20template%20change_filament_gcode.json)、[P1S交換テンプレート](https://github.com/bambulab/BambuStudio/blob/master/resources/profiles/BBL/machine/Bambu%20Lab%20P1S%200.4%20nozzle%20template%20change_filament_gcode.json) の装置位置・命令順を参考に、共通材料用として実装しています。3MF形式は公式の [bbs_3mf.cpp](https://github.com/bambulab/BambuStudio/blob/master/src/libslic3r/Format/bbs_3mf.cpp) を参照しました。公式スライサーの開始処理・材料別交換レシピ・タワー生成全体を再現したものではありません。実機での切断・パージ・接着品質は未検証です。最初は小さな2層モデルで実機の交換を確認してください。
+
+## 開発用ファイル
+
+`editor-base.html` は添付エディターの保存コピーです。追加機能は `layer-engine.js`、`layer-ui.js`、`layer-panel.html`、`layer-panel.css`、`process-review.js`、`review-panel.html`、`svg-import.js`、`speed-engine.js`、`speed-ui.js`、`speed-panel.html`、`ams-engine.js`、`ams-ui.js` に分けています。
 
 ```sh
 python3 build.py
