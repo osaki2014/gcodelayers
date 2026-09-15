@@ -141,6 +141,16 @@ TPU for AMSは68Dの材料で、既存のTPU 95Aと別に扱います。PLA Glow
 
 ## 開発・再ビルド
 
+### 3MFのプリンター認識修正（2026-09-15）
+
+Bambu Studio 02.07.01.62では `project_settings.config` 内の数値配列を読み込めず、そのキーで設定の読み込みを中断します。従来出力の `filament_map: [1]` が原因で、後続のプリンター名・ノズル径などが失われ、ファイル名のカスタムプリセットとして表示されていました。設定JSONの配列要素をすべて文字列に統一し（例：`["1"]`）、2ノズル機の `physical_extruder_map` も同様に修正しました。プレート情報JSONの数値配列は別の形式なので変更していません。
+
+設定には `name: "project_settings"` と、標準プリンター・材料への `inherits_group`、対応プリンターの情報も保存します。セキュリティ警告を無効にする設定は行いません。プロセス名が本アプリのカスタム設定名になることは正常ですが、プリンターは選んだBambuの機種に関連付けられます。
+
+ユーザー提供の不具合ファイルに対し、Bambu Studio本体のCLIで元ファイルの `invalid json array for filament_map` を再現し、修復版で解消することを確認しました。CLIはメッシュのないG-code専用3MFを解析後に「empty」として終了するため、設定読み込みの検証に限って一時的なテストメッシュを入れたコピーも使用し、A1 mini・0.4 mm・線幅0.49688の復元を確認しました。配布する修復版にはテストメッシュを含めず、元の造形G-codeとMD5を完全に保持しています。GUIの選択表示・プリンターへの送信は未確認です。
+
+根拠：[Bambu Studio Config.cpp](https://github.com/bambulab/BambuStudio/blob/master/src/libslic3r/Config.cpp) の `load_from_json` / `parse_str_arr` と、[PresetBundle.cpp](https://github.com/bambulab/BambuStudio/blob/master/src/libslic3r/PresetBundle.cpp) のプリセット継承情報の読み込み処理。
+
 `editor-base.html` は添付エディターの保存コピーです。追加機能は `layer-engine.js`、`layer-ui.js`、`layer-panel.html`、`layer-panel.css`、`process-review.js`、`review-panel.html`、`svg-import.js`、`speed-engine.js`、`speed-ui.js`、`speed-panel.html`、`ams-engine.js`、`ams-ui.js` に分けています。
 
 ```sh

@@ -6005,8 +6005,19 @@ buildProjectSettings=()=>{
   p.nozzle_diameter=Array(count).fill(String(+$('nozzle').value));p.nozzle_type=Array(count).fill($('material').value==='pla_glow'||m.dual||$('machine').value==='x1e'?'hardened_steel':+$('nozzle').value>=.6?'hardened_steel':'stainless_steel');
   for(const key of ['fan_min_speed','fan_max_speed','close_fan_the_first_x_layers','nozzle_temperature_range_low','nozzle_temperature_range_high','temperature_vitrification'])if(p[key]!==undefined)p[key]=String(p[key]).split(',');
   if(m.dual){Object.assign(p,{physical_extruder_map:[1,0],printer_extruder_id:['1','2'],master_extruder_id:'1',extruder_type:BambuProfiles.machines[$('machine').value].extruder_type,extruder_offset:['0x0','0x0'],extruder_printable_area:BambuProfiles.machines[$('machine').value].extruder_printable_area,extruder_printable_height:BambuProfiles.machines[$('machine').value].extruder_printable_height});}
-  return JSON.stringify(p,null,2);
+  return JSON.stringify(bambuProjectConfig(p),null,2);
 };
+// Bambu ConfigBase::load_from_json stops at numeric JSON array elements.
+// Project settings use strings even for numeric vectors (unlike plate_1.json).
+function bambuProjectConfig(p){
+  const strings=value=>Array.isArray(value)?value.map(strings):typeof value==='boolean'?(value?'1':'0'):String(value);
+  const result=Object.fromEntries(Object.entries(p).map(([key,value])=>[key,strings(value)]));
+  result.name='project_settings';
+  const filaments=result.filament_settings_id||[];
+  result.inherits_group=['',...filaments,result.printer_settings_id];
+  result.print_compatible_printers=[result.printer_settings_id];
+  return result;
+}
 
 // initial sample
 ta.value=makeInitialModel();
